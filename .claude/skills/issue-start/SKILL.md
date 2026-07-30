@@ -141,7 +141,7 @@ commit する（github では silent に無視）。
 | ブランチ | $BRANCH |
 | ディレクトリ | ../$(basename "$WT") |
 | 基点ブランチ | main |
-| venv | シンボリックリンク作成済み |
+| dependency state | worktree-local setup 完了 |
 | provider overlay | シンボリックリンク作成済み / 不要（main に未配置） |
 | メタ情報 | Issue本文に追記済み |
 
@@ -166,7 +166,7 @@ status: PASS
 reason: |
   Worktree 構築成功
 evidence: |
-  worktree 作成、venv symlink 済み
+  worktree 作成、worktree-local dependency setup 済み
 suggestion: |
 ---END_VERDICT---
 ```

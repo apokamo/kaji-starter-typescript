@@ -5,4 +5,9 @@ if [[ "$#" -eq 1 && "$1" == "validate" ]]; then
   workflows=(.kaji/wf/custom/**/*.yaml)
   exec uv run --project tools/kaji --locked --offline kaji validate "${workflows[@]}"
 fi
+if [[ "$#" -ge 1 && "$1" == "series-generate" ]]; then
+  shift
+  exec uv run --project tools/kaji --locked --offline \
+    python -m kaji_harness.scripts.series_generate "$@"
+fi
 exec uv run --project tools/kaji --locked --offline kaji "$@"

@@ -1,3 +1,5 @@
+import { lstatSync, realpathSync } from "node:fs";
+
 import { z } from "zod";
 import { parse } from "yaml";
 
@@ -72,23 +74,43 @@ export function verifyChecksum(actual: string, expected: string): void {
   }
 }
 
-const FORBIDDEN_CONSUMER_TERMS = [
-  ".kaji/wf/official/",
-  ".venv/bin/",
-  "pytest",
-  "ruff",
-  "mypy",
-  "uv run kaji",
-  "known_failures",
-  "--compare",
-  "verdict: ok",
+const FORBIDDEN_CONSUMER_PATTERNS = [
+  { label: ".kaji/wf/official/", pattern: /\.kaji\/wf\/official\// },
+  { label: ".venv/bin/", pattern: /\.venv\/bin\// },
+  { label: "pytest", pattern: /\bpytest\b/i },
+  { label: "ruff", pattern: /\bruff\b/i },
+  { label: "mypy", pattern: /\bmypy\b/i },
+  { label: "uv run kaji", pattern: /\buv run kaji\b/ },
+  { label: "direct Python module invocation", pattern: /\buv run python\b/ },
+  { label: "known_failures", pattern: /\bknown_failures\b/ },
+  { label: "--compare", pattern: /--compare\b/ },
+  { label: "verdict: ok", pattern: /verdict:\s*ok\b/i },
+  { label: "@Vitest.mark", pattern: /@Vitest\.mark\./ },
+  { label: "Python temporary fixture", pattern: /\btmp_path\b/ },
+  { label: "Python import error", pattern: /\bImportError\b/ },
+  { label: "pytest coverage flag", pattern: /--cov(?:=|\b)/ },
+  { label: "pytest name filter", pattern: /\bnpm test\b[^\n]*\s-k(?:\s|$)/ },
+  { label: "pip install", pattern: /\bpip install\b/ },
+  {
+    label: "Python link checker",
+    pattern: /\bpython3\s+scripts\/check[_-]doc[_-]links\.py\b/,
+  },
+  {
+    label: "Python source or test path",
+    pattern: /\b(?:src|tests)\/[A-Za-z0-9_./-]+\.py\b/,
+  },
+  {
+    label: "kaji Python implementation path",
+    pattern: /\b(?:prompt|verdict|cli_main)\.py\b/,
+  },
+  { label: "Python runtime library", pattern: /\b(?:Pydantic|typer)\b/ },
 ] as const;
 
 export function verifyConsumerText(filename: string, text: string): void {
-  for (const forbidden of FORBIDDEN_CONSUMER_TERMS) {
-    if (text.includes(forbidden)) {
+  for (const forbidden of FORBIDDEN_CONSUMER_PATTERNS) {
+    if (forbidden.pattern.test(text)) {
       throw new Error(
-        `Forbidden consumer vocabulary ${forbidden}: ${filename}`,
+        `Forbidden consumer vocabulary ${forbidden.label}: ${filename}`,
       );
     }
   }
@@ -100,6 +122,31 @@ export function verifySkillMetadata(name: string, text: string): void {
   };
   if (frontmatter.name !== name) {
     throw new Error(`Skill frontmatter does not match directory: ${name}`);
+  }
+}
+
+export function verifyAgentSkillSymlink(
+  name: string,
+  entry: string,
+  expectedTarget: string,
+): void {
+  let isSymbolicLink: boolean;
+  try {
+    isSymbolicLink = lstatSync(entry).isSymbolicLink();
+  } catch (error) {
+    throw new Error(`Missing agent skill symlink: ${name}`, { cause: error });
+  }
+  if (!isSymbolicLink) {
+    throw new Error(`Agent skill entry is not a symlink: ${name}`);
+  }
+  let actualTarget: string;
+  try {
+    actualTarget = realpathSync(entry);
+  } catch (error) {
+    throw new Error(`Broken agent skill symlink: ${name}`, { cause: error });
+  }
+  if (actualTarget !== realpathSync(expectedTarget)) {
+    throw new Error(`Agent skill symlink targets the wrong path: ${name}`);
   }
 }
 

@@ -58,7 +58,7 @@ $ARGUMENTS = <issue_id>
 4. 実装 / CLI / AGENTS.md / CLAUDE.md / 関連 docs との整合を再確認
 5. 修正対象ファイルに絞って以下を実行:
    ```bash
-   cd [worktree_dir] && python3 scripts/check_doc_links.py [changed-markdown-files...]
+   cd [worktree_dir] && node scripts/check-doc-links.ts
    ```
 6. docs のみコミット
 7. 対応内容を Issue にコメント

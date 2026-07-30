@@ -38,3 +38,44 @@ test(
     ]);
   },
 );
+
+test(
+  "exposes series generation through the project-local wrapper",
+  { tags: ["medium"] },
+  () => {
+    const directory = mkdtempSync(path.join(tmpdir(), "kaji-wrapper-"));
+    const capture = path.join(directory, "arguments.txt");
+    const uv = path.join(directory, "uv");
+    writeFileSync(
+      uv,
+      `#!/usr/bin/env bash\nprintf '%s\\n' "$@" >"${capture}"\nexit 23\n`,
+      "utf8",
+    );
+    chmodSync(uv, 0o755);
+    const result = spawnSync(
+      "./scripts/kaji",
+      ["series-generate", "--id", "release", "--member", "391=dev.yaml"],
+      {
+        cwd: process.cwd(),
+        encoding: "utf8",
+        env: { ...process.env, PATH: `${directory}:${process.env.PATH}` },
+      },
+    );
+    expect(result.status).toBe(23);
+    expect(readFileSync(capture, "utf8").split("\n")).toEqual([
+      "run",
+      "--project",
+      "tools/kaji",
+      "--locked",
+      "--offline",
+      "python",
+      "-m",
+      "kaji_harness.scripts.series_generate",
+      "--id",
+      "release",
+      "--member",
+      "391=dev.yaml",
+      "",
+    ]);
+  },
+);

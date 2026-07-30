@@ -107,7 +107,7 @@ test ! -e "$WORKTREE"
 ISSUE_OUTPUT=$(./scripts/kaji issue view "$ISSUE_ID" --comments)
 grep -q "TypeScript Baseline" <<<"$ISSUE_OUTPUT"
 grep -q "status: PASS" <<<"$ISSUE_OUTPUT"
-grep -q "state: closed" ".kaji/issues/${ISSUE_ID}.md"
+test "$(./scripts/kaji issue view "$ISSUE_ID" --json state -q '.state')" = "closed"
 printf 'dogfood_source_sha=%s\n' "$SOURCE_SHA"
 printf 'dogfood_issue=%s\n' "$ISSUE_ID"
 printf 'dogfood_issue_start_agent=%s\n' "$DOGFOOD_AGENT"

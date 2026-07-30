@@ -42,10 +42,10 @@ $ARGUMENTS = <issue_id>
 コンテキスト変数 `issue_id` が存在すればそちらを使用。なければ `$ARGUMENTS`
 の第1引数を `issue_id` として使用。
 
-`issue_ref` はハーネス経由ではプロンプトに自動注入される（`prompt.py`
-側で provider 別に整形）。手動実行時は `issue_id` から導出する:
-GitHub 数値 ID なら `#<issue_id>`、`local-*` 形式なら bare ID（`#`
-を付けない）。
+`issue_ref`
+はハーネス経由では provider 別に整形されてプロンプトへ自動注入される。手動実行時は
+`issue_id` から導出する: GitHub 数値 ID なら `#<issue_id>`、`local-*`
+形式なら bare ID（`#` を付けない）。
 
 ## 前提知識の読み込み
 
@@ -194,7 +194,7 @@ ls [worktree_dir]/draft/design/issue-[issue_id]-*.md 2>/dev/null
 #    fix/[issue_id] ブランチが [default_branch] から枝分かれ後、commit が
 #    2 件以上ある（最初は設計書作成 commit、それ以外に implementation /
 #    skill / doc 改修 commit が存在）。TypeScript 実装範囲（src/ tests/
-#    Makefile pyproject.toml）に pathspec を固定すると instruction-only
+#    Makefile package.json）に pathspec を固定すると instruction-only
 #    （.claude/skills/ 改修）/ docs-only Issue を取りこぼすため、
 #    リポジトリ全体 commit から draft/design/ を除外する方式とする。
 TOTAL=$(git -C [worktree_dir] log --oneline [default_branch]..HEAD | wc -l)
@@ -269,8 +269,8 @@ fi
 # BACK_COUNT >= 1 → design 再入マーカーあり
 #
 # provider 差分: `--json comments` は github / local 両 provider で同一構造
-# （`.comments[].body`）を返す（local は cli_main.py `_local_issue_view` が
-# gh 互換 `--json` を実装済み）。provider 別の抽出器は不要。マーカーは CLI が
+# （`.comments[].body`）を返す（local provider も gh 互換 `--json` を
+# 実装済み）。provider 別の抽出器は不要。マーカーは CLI が
 # 両 provider で同一形式で付与するため、consumer 側も provider 非依存。
 ```
 
@@ -489,7 +489,7 @@ Issue: [issue_ref]
 
 ### 使用例
 
-\`\`\`python
+\`\`\`typescript
 
 # ユーザーコード例
 
@@ -546,8 +546,8 @@ Issue: [issue_ref]
 
 #### 変更固有検証
 
-- (例: `make verify-docs`、隔離環境での
-  `uv pip install -e .`、`importlib.metadata` 確認)
+- (例: `make verify-docs`、`npm pack --dry-run`、`npm pkg get` によるpackage
+  metadata 確認)
 
 #### 恒久テストを追加しない理由
 

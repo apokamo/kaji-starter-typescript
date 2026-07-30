@@ -6,6 +6,7 @@ import { parse } from "yaml";
 
 import {
   verifyActionReferences,
+  verifyAgentSkillSymlink,
   verifyConsumerText,
   verifyPackagePolicy,
   verifySkillMetadata,
@@ -83,8 +84,8 @@ for (const required of [
 }
 for (const name of readdirSync(".claude/skills")) {
   const entry = path.join(".agents/skills", name);
-  if (!lstatSync(entry).isSymbolicLink())
-    throw new Error(`Missing agent skill symlink: ${name}`);
+  const expectedTarget = path.join(".claude/skills", name);
+  verifyAgentSkillSymlink(name, entry, expectedTarget);
   const skillPath = path.join(".claude/skills", name, "SKILL.md");
   try {
     const skill = readFileSync(skillPath, "utf8");

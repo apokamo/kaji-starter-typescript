@@ -50,10 +50,10 @@ $ARGUMENTS = <issue_id>
 コンテキスト変数 `issue_id` が存在すればそちらを使用。なければ `$ARGUMENTS`
 の第1引数を `issue_id` として使用。
 
-`issue_ref` はハーネス経由ではプロンプトに自動注入される（`prompt.py`
-側で provider 別に整形）。手動実行時は `issue_id` から導出する:
-GitHub 数値 ID なら `#<issue_id>`、`local-*` 形式なら bare ID（`#`
-を付けない）。
+`issue_ref`
+はハーネス経由では provider 別に整形されてプロンプトへ自動注入される。手動実行時は
+`issue_id` から導出する: GitHub 数値 ID なら `#<issue_id>`、`local-*`
+形式なら bare ID（`#` を付けない）。
 
 ## 前提知識の読み込み
 
@@ -150,8 +150,8 @@ Requested = `RETRY` 相当のため verdict マーカーを `RETRY` で付与す
 
 | 情報源 | URL/パス | 根拠（引用/要約） |
 |--------|----------|------------------------|
-| TypeScript公式ドキュメント | https://docs.python.org/... | 「〜を使用することで...」（該当箇所の引用） |
-| Pydantic 2 Migration | https://docs.pydantic.dev/... | 〜が推奨されている（要約） |
+| TypeScript 公式ドキュメント | https://www.typescriptlang.org/docs/... | 「〜を使用することで...」（該当箇所の引用） |
+| Zod 公式ドキュメント | https://zod.dev/... | 〜が推奨されている（要約） |
 \`\`\`
 
 ## 判定
@@ -304,8 +304,8 @@ Issue ラベルから `type:*` ラベルを **配列として**
      - [ ] 恒久テストを追加しない場合、その理由が「docs-only / metadata-only /
            packaging-only 変更」節の 4 条件に沿って示されているか
      - [ ] スキップ時のエビデンス（既存テスト名、外部保証、確認内容）が記載されているか
-     - [ ] `uv pip install -e .`
-           など副作用のある検証を行う場合、隔離方針が明記されているか
+     - [ ] `npm pack`
+           など artifact を生成する検証を行う場合、隔離方針が明記されているか
    - **原則として新規テストを要求する変更**（`testing-convention.md`
      の「実行時の振る舞いを変える変更」節参照）: ドメインロジック追加・条件分岐追加・データ変換仕様変更・API 契約変更・過去障害の再発防止。これらに該当する変更でテストを省略している場合は Changes
      Requested

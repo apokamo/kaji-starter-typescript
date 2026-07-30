@@ -43,10 +43,10 @@ $ARGUMENTS = <issue_id>
 コンテキスト変数 `issue_id` が存在すればそちらを使用。なければ `$ARGUMENTS`
 の第1引数を `issue_id` として使用。
 
-`issue_ref` はハーネス経由ではプロンプトに自動注入される（`prompt.py`
-側で provider 別に整形）。手動実行時は `issue_id` から導出する:
-GitHub 数値 ID なら `#<issue_id>`、`local-*` 形式なら bare ID（`#`
-を付けない）。
+`issue_ref`
+はハーネス経由では provider 別に整形されてプロンプトへ自動注入される。手動実行時は
+`issue_id` から導出する: GitHub 数値 ID なら `#<issue_id>`、`local-*`
+形式なら bare ID（`#` を付けない）。
 
 ## 前提知識の読み込み
 
@@ -142,11 +142,11 @@ Vitest を一括で実行する（AGENTS.md の pre-commit 契約と同一）。
 
 特定マーカーや変更タイプ固有の検証が必要な場合は、設計書「テスト戦略」に従い追加実行する:
 
-| 変更タイプ                     | 追加検証                                           |
-| ------------------------------ | -------------------------------------------------- |
-| docs-only                      | `make verify-docs`                                 |
-| metadata-only / packaging-only | `uv lock --check` または設計書で定めた変更固有検証 |
-| 通常                           | 追加なし（`make check` で十分）                    |
+| 変更タイプ                     | 追加検証                                              |
+| ------------------------------ | ----------------------------------------------------- |
+| docs-only                      | `make verify-docs`                                    |
+| metadata-only / packaging-only | `npm pack --dry-run` または設計書で定めた変更固有検証 |
+| 通常                           | 追加なし（`make check` で十分）                       |
 
 > **baseline failure の扱い**:
 > `[worktree]/.kaji-artifacts/baseline/baseline.json` は `clean`
@@ -314,7 +314,7 @@ BODY=$(./scripts/kaji issue view [issue_id] --json body -q '.body')
 | ゲート | 結果 | 備考 |
 |--------|------|------|
 | `make check` | PASS / FAIL | ESLint / Prettier / TypeScript / Vitest 一括 |
-| 変更タイプ固有検証 | PASS / FAIL / N/A | 例: `make verify-docs` / `uv lock --check` |
+| 変更タイプ固有検証 | PASS / FAIL / N/A | 例: `make verify-docs` / `npm pack --dry-run` |
 
 ### docs 整合
 
@@ -360,14 +360,14 @@ suggestion: |
 | ABORT          | 重大な前提不整合                                                                                                                                                               |
 
 > `BACK_DESIGN` / `BACK_IMPLEMENT` / `BACK` / `ABORT` はいずれも `suggestion`
-> フィールド必須。harness 側の `verdict.py` が空 suggestion を
+> フィールド必須。harness の verdict validator が空 suggestion を
 > `VerdictParseError` で弾く。
 
 ### workflow YAML 互換ルール
 
 `i-dev-final-check` は複数 workflow から呼ばれるため、skill 側は
-**prompt 経由で注入される valid status 一覧（`prompt.py:75, 92-97` の
-`valid_statuses = list(step.on.keys())`）を権威ある情報源として扱う**。prompt が「使ってよい」と言った status のみ返すことで多 workflow 互換性が成立する。
+**prompt 経由で注入される valid
+status 一覧を権威ある情報源として扱う**。prompt が「使ってよい」と言った status のみ返すことで多 workflow 互換性が成立する。
 
 | 呼び出された workflow の `final-check.on` キー                   | skill が返すべき status                                                                   |
 | ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |

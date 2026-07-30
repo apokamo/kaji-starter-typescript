@@ -44,7 +44,7 @@ Issue number. Treat `--workflow` as a member-specific override.
    manually:
 
    ```bash
-   uv run python -m kaji_harness.scripts.series_generate \
+   ./scripts/kaji series-generate \
      --id <series-id> [--parent <parent>] \
      --member <issue>=<workflow>... \
      --output .kaji/series/<series-id>.yaml [--update]

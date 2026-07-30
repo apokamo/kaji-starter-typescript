@@ -31,7 +31,7 @@ cd [worktree_dir] && <計測コマンド> | tee /tmp/baseline-<issue>.txt
 対象モジュールの既存テストカバレッジを評価し、不足があれば**先に**テストを足す:
 
 ```bash
-cd [worktree_dir] && npm test -- --cov=<module> tests/<path>
+cd [worktree_dir] && npm run coverage -- tests/<path>.test.ts
 ```
 
 - カバーされていない分岐 / エッジケースに対してテストを追加
@@ -49,7 +49,7 @@ cd [worktree_dir] && npm test -- --cov=<module> tests/<path>
 改修後に再度テスト全体を実行:
 
 ```bash
-cd [worktree_dir] && npm test -- tests/<path>
+cd [worktree_dir] && npm test -- tests/<path>.test.ts
 ```
 
 - 既存テスト + Step R2 で追加した safety net が全件 PASS

@@ -19,12 +19,12 @@
    - または「修正前の OB」を assert するテストを書き、Green フェーズで EB に書き換える
 4. テストサイズは根本原因の層に合わせる（[docs/dev/testing-convention.md](../../../../docs/dev/testing-convention.md)
    に従う）:
-   - 純粋ロジック → `@Vitest.mark.small`
-   - ファイル I/O / サブプロセス / 内部サービス結合 → `@Vitest.mark.medium`
-   - 外部 API / E2E → `@Vitest.mark.large`
+   - 純粋ロジック → `{ tags: ["small"] }`
+   - ファイル I/O / サブプロセス / 内部サービス結合 → `{ tags: ["medium"] }`
+   - 外部 API / E2E → `{ tags: ["large"] }`
 5. 実行して FAIL を確認:
    ```bash
-   cd [worktree_dir] && npm test -- tests/<path> -k <test_name> -v
+   cd [worktree_dir] && npm test -- tests/<path>.test.ts -t "<test name>"
    ```
    - 誤って PASS してしまう場合: 再現条件が違う → 設計書「再現手順」に戻る
 
@@ -42,7 +42,7 @@
 ### Step B3: 再現テストの Green 確認
 
 ```bash
-cd [worktree_dir] && npm test -- tests/<path> -v
+cd [worktree_dir] && npm test -- tests/<path>.test.ts
 ```
 
 - 再現テストが PASS することを確認

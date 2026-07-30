@@ -18,11 +18,11 @@
 ### Step F2: Small テストから書き始める（Red）
 
 - バリデーション・マッピング・純粋ロジック単位で失敗するテストを書く
-- `@Vitest.mark.small` を付与
-- 実行して期待通りに赤くなることを確認（ImportError や assert 失敗）
+- test option に `{ tags: ["small"] }` を付与
+- 実行して期待通りに赤くなることを確認（module 解決 error や assertion failure）
 
 ```bash
-cd [worktree_dir] && npm test -- tests/<path> -v
+cd [worktree_dir] && npm test -- tests/<path>.test.ts
 ```
 
 ### Step F3: 最小実装で Green
@@ -34,9 +34,9 @@ cd [worktree_dir] && npm test -- tests/<path> -v
 
 設計書で Medium が定義されている場合:
 
-- tmp_path
-  fixture を使ったファイル I/O テスト、サブプロセス起動を含む結合テスト、CLI 呼び出しの往復テスト等
-- `@Vitest.mark.medium` を付与
+- `node:fs/promises` の `mkdtemp` と `node:os` の `tmpdir`
+  を使ったファイル I/O テスト、サブプロセス起動を含む結合テスト、CLI 呼び出しの往復テスト等
+- test option に `{ tags: ["medium"] }` を付与
 - 統合テストで mock するくらいなら Large に上げる（mock と実挙動の乖離が回帰を隠すため）
 
 ### Step F5: Large テスト（実 API / E2E）
@@ -44,7 +44,7 @@ cd [worktree_dir] && npm test -- tests/<path> -v
 設計書で Large が定義されている場合:
 
 - 実 API 疎通や外部サービス接続、CLI を実際に起動する E2E を含む
-- `@Vitest.mark.large` を付与
+- test option に `{ tags: ["large"] }` を付与
 - skip 禁止（API キー不在や環境未整備は環境側の問題として修正対象）
 
 ### Step F6: Refactor
@@ -76,9 +76,9 @@ cd [worktree_dir] && make check
 
 - [ ] 使用例どおりの呼び出しでテストが通る
 - [ ] 設計書のユースケースが E2E テスト等でカバーされている（Large 必要なケース）
-- [ ] 新規ライブラリを追加したなら `package.json` に登録済み（手動 `pip install`
-      禁止、`uv sync` で同期）
-- [ ] `any` / `Any` を使っていない（必要な場合は理由を明記）
+- [ ] 新規ライブラリを追加したなら exact version で `package.json` と
+      `package-lock.json` に登録済み（lockfile の手編集は禁止）
+- [ ] `any` を使っていない（必要な場合は理由を明記）
 - [ ] ログ・エラーメッセージが
       [docs/reference/typescript-standards.md](../../../../docs/reference/typescript-standards.md)
       に沿っている

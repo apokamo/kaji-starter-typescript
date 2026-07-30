@@ -109,7 +109,7 @@ $ARGUMENTS = <issue_id>
 
 **一次情報の例:**
 
-- 公式ドキュメント（TypeScript、Pydantic、typer 等）
+- 公式ドキュメント（TypeScript、Zod、Vitest 等）
 - RFC、仕様書
 - ライブラリのソースコード（GitHub URL）
 - API仕様書（OpenAPI等）

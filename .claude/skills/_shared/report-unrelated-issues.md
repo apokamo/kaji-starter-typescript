@@ -25,9 +25,10 @@
 
 ### テスト失敗の場合
 
-- 失敗テスト名（例: `tests/test_foo.py::test_bar`）
+- 失敗テスト名（例: `tests/config.test.ts > rejects an empty message`）
 - エラーログ（traceback）
-- 再現コマンド（例: `Vitest tests/test_foo.py::test_bar -v`）
+- 再現コマンド（例:
+  `npm test -- tests/config.test.ts -t "rejects an empty message"`）
 - 発見時のブランチ・コミット
 
 ### コード・ドキュメントの問題の場合
