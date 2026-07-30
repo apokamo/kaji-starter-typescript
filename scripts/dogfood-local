@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SOURCE_ROOT=$(git rev-parse --show-toplevel)
+SOURCE_SHA=$(git -C "$SOURCE_ROOT" rev-parse HEAD)
+DOGFOOD_DIR=$(mktemp -d /tmp/kaji-ts-dogfood.XXXXXX)
+
+cleanup() {
+  if [[ "$DOGFOOD_DIR" == /tmp/kaji-ts-dogfood.* ]]; then
+    rm -rf -- "$DOGFOOD_DIR"
+  fi
+}
+trap cleanup EXIT
+
+git clone --no-local "$SOURCE_ROOT" "$DOGFOOD_DIR/repository"
+cd "$DOGFOOD_DIR/repository"
+make setup
+unshare --user --map-root-user --net make check
+./scripts/kaji local init --machine-id dogfood --non-interactive
+npm run set-agent -- codex
+git add .kaji/wf/custom
+git commit -m "chore: select Codex for local dogfood"
+
+ISSUE_BODY="$DOGFOOD_DIR/issue.md"
+cat >"$ISSUE_BODY" <<'EOF'
+## 概要
+
+Add a pure `formatGreeting(name)` helper and use it from the sample app.
+
+## スコープ境界
+
+Include the helper, tagged tests, and related docs only.
+
+## 完了条件
+
+- [ ] `formatGreeting("Codex")` returns `Hello, Codex!`
+- [ ] `make check` passes
+EOF
+
+ISSUE_ID=$(./scripts/kaji issue create \
+  --title "feat: exercise TypeScript starter lifecycle" \
+  --body-file "$ISSUE_BODY" \
+  --label type:feature)
+BRANCH=$(./scripts/kaji issue context "$ISSUE_ID" -q '.branch_name')
+WORKTREE=$(./scripts/kaji issue context "$ISSUE_ID" -q '.worktree_dir')
+git worktree add -b "$BRANCH" "$WORKTREE" main
+(
+  cd "$WORKTREE"
+  make setup
+)
+./scripts/kaji run .kaji/wf/custom/local/dev-local.yaml "$ISSUE_ID"
+
+git diff --exit-code
+git status --short
+printf 'dogfood_source_sha=%s\n' "$SOURCE_SHA"
+printf 'dogfood_issue=%s\n' "$ISSUE_ID"

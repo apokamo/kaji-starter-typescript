@@ -1,0 +1,8 @@
+[project]
+name = "starter-kaji-tools"
+version = "0.1.0"
+requires-python = ">=3.13,<3.14"
+dependencies = ["kaji"]
+
+[tool.uv.sources]
+kaji = { git = "https://github.com/apokamo/kaji.git", tag = "v0.18.0" }

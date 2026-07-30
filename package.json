@@ -1,0 +1,57 @@
+{
+  "name": "starter-app",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.12 <25"
+  },
+  "packageManager": "npm@11.16.0",
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": "24.18.1",
+      "onFail": "error"
+    },
+    "packageManager": {
+      "name": "npm",
+      "version": "11.16.0",
+      "onFail": "error"
+    }
+  },
+  "allowScripts": {
+    "fsevents@2.3.3": true
+  },
+  "scripts": {
+    "audit:tags": "vitest run --reporter=dot --reporter=./scripts/test-tag-reporter.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "coverage": "vitest run --coverage",
+    "dev": "node --watch --env-file-if-exists=.env src/index.ts",
+    "format:check": "prettier --check .",
+    "format:write": "prettier --write .",
+    "lint": "eslint .",
+    "set-agent": "node scripts/set-agent.ts",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "test:small": "vitest run --tags-filter small",
+    "test:medium": "vitest run --tags-filter medium",
+    "test:large": "vitest run --tags-filter large",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "verify:static": "node scripts/verify-repository.ts"
+  },
+  "dependencies": {
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "24.13.3",
+    "@vitest/coverage-v8": "4.1.10",
+    "eslint": "10.8.0",
+    "eslint-config-prettier": "10.1.8",
+    "prettier": "3.9.6",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.65.0",
+    "vitest": "4.1.10",
+    "yaml": "2.9.0"
+  }
+}

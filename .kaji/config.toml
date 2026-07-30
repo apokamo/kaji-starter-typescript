@@ -1,0 +1,15 @@
+[paths]
+artifacts_dir = ".kaji/artifacts"
+skill_dir = ".claude/skills"
+
+[execution]
+default_timeout = 2400
+agent_runner = "headless"
+
+[provider]
+type = "github"
+
+[provider.github]
+repo = "apokamo/starter-app"
+default_branch = "main"
+git_remote = "origin"
