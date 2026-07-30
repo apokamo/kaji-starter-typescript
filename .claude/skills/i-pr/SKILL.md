@@ -62,7 +62,7 @@ $ARGUMENTS = <issue_id>
 ## 前提知識の読み込み
 
 1. [docs/dev/kaji-workflow.md](../../../docs/dev/kaji-workflow.md)
-2. [docs/dev/shared_skill_rules.md](../../../docs/dev/shared_skill_rules.md)
+2. [docs/dev/shared-skill-rules.md](../../../docs/dev/shared-skill-rules.md)
 3. `docs/dev/git-workflow.md`（Conventional Commits 運用、`--no-ff` merge 規約）
 
 ## 前提条件
@@ -262,7 +262,7 @@ fi
 > message 経由を抑止する保証はない。commit body / merge commit
 > message 側の closing keyword 回避規約は維持し、`Closes` +
 > Issue 番号を書いてよいのは PR description のこの1行だけとする。正本は
-> [`docs/dev/shared_skill_rules.md`](../../../docs/dev/shared_skill_rules.md)。
+> [`docs/dev/shared-skill-rules.md`](../../../docs/dev/shared-skill-rules.md)。
 
 > **マージ規約**: merge 規約は `--no-ff` only（squash merge 禁止）。マージ自体は
 > `/issue-close` の責務だが、PR タイトルとコミットは Conventional

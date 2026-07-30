@@ -51,8 +51,8 @@ $ARGUMENTS = <issue_id>
 ## 前提知識の読み込み
 
 1. [docs/dev/kaji-workflow.md](../../../docs/dev/kaji-workflow.md)
-2. [docs/dev/documentation_update_criteria.md](../../../docs/dev/documentation_update_criteria.md)
-3. [docs/dev/shared_skill_rules.md](../../../docs/dev/shared_skill_rules.md)
+2. [docs/dev/documentation-update-criteria.md](../../../docs/dev/documentation-update-criteria.md)
+3. [docs/dev/shared-skill-rules.md](../../../docs/dev/shared-skill-rules.md)
 4. `docs/README.md`
 5. `README.md`
 6. 変更対象 docs と関連する実装、workflow、設計書、運用ドキュメント
@@ -89,7 +89,7 @@ $ARGUMENTS = <issue_id>
 
 ### Step 3: 整合性監査
 
-[docs/dev/documentation_update_criteria.md](../../../docs/dev/documentation_update_criteria.md)
+[docs/dev/documentation-update-criteria.md](../../../docs/dev/documentation-update-criteria.md)
 の 3 観点（事実整合性・実装整合性・運用整合性）に沿って、最低限以下を確認する。
 
 - `docs/` の記述が現行コードと矛盾していないか

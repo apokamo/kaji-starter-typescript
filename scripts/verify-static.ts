@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { parse } from "yaml";
 
 const packagePolicySchema = z.object({
   engines: z.object({ node: z.literal(">=24.12 <25") }),
@@ -68,5 +69,47 @@ export function verifyActionReferences(workflow: string): void {
 export function verifyChecksum(actual: string, expected: string): void {
   if (!/^[0-9a-f]{64}$/.test(expected) || actual !== expected) {
     throw new Error(`Checksum mismatch: expected ${expected}, got ${actual}`);
+  }
+}
+
+const FORBIDDEN_CONSUMER_TERMS = [
+  ".kaji/wf/official/",
+  ".venv/bin/",
+  "pytest",
+  "ruff",
+  "mypy",
+  "uv run kaji",
+  "known_failures",
+  "--compare",
+  "verdict: ok",
+] as const;
+
+export function verifyConsumerText(filename: string, text: string): void {
+  for (const forbidden of FORBIDDEN_CONSUMER_TERMS) {
+    if (text.includes(forbidden)) {
+      throw new Error(
+        `Forbidden consumer vocabulary ${forbidden}: ${filename}`,
+      );
+    }
+  }
+}
+
+export function verifySkillMetadata(name: string, text: string): void {
+  const frontmatter = parse(text.split("---", 3)[1] ?? "") as {
+    name?: string;
+  };
+  if (frontmatter.name !== name) {
+    throw new Error(`Skill frontmatter does not match directory: ${name}`);
+  }
+}
+
+export function verifyTemplateIdentity(
+  packageName: string | undefined,
+  repository: string,
+): void {
+  const pristinePackage = packageName === "starter-app";
+  const pristineRepository = repository === "apokamo/starter-app";
+  if (pristinePackage !== pristineRepository) {
+    throw new Error("Template identity is only partially customized");
   }
 }

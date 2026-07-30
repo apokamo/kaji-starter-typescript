@@ -51,9 +51,9 @@ GitHub 数値 ID なら `#<issue_id>`、`local-*` 形式なら bare ID（`#`
 ## 前提知識の読み込み
 
 1. [docs/dev/kaji-workflow.md](../../../docs/dev/kaji-workflow.md)
-2. [docs/dev/workflow_completion_criteria.md](../../../docs/dev/workflow_completion_criteria.md)
-3. [docs/dev/documentation_update_criteria.md](../../../docs/dev/documentation_update_criteria.md)
-4. [docs/dev/shared_skill_rules.md](../../../docs/dev/shared_skill_rules.md)
+2. [docs/dev/workflow-completion-criteria.md](../../../docs/dev/workflow-completion-criteria.md)
+3. [docs/dev/documentation-update-criteria.md](../../../docs/dev/documentation-update-criteria.md)
+4. [docs/dev/shared-skill-rules.md](../../../docs/dev/shared-skill-rules.md)
 5. `docs/README.md`
 6. [_shared/promote-design.md](../_shared/promote-design.md)
 
@@ -129,21 +129,16 @@ Verdict 出力 § workflow YAML 互換ルール）。
 ## Step 4 詳細: 品質ゲートの実行
 
 この starter は TypeScript application と project-local
-kaji を分離する。baseline artifact が `clean` の場合は以下の 1 本を実行する。
+kaji を分離する。clean-only baseline artifact を
+`node scripts/baseline-precheck.ts --validate` で検証後、以下を実行する。
 
 ```bash
 cd [worktree_dir] && make check
 ```
 
 `make check` は ESLint / Prettier / TypeScript /
-Vitest を一括で実行する（AGENTS.md の pre-commit 契約と同一）。
-
-artifact が `known_failures` の場合だけ、同じ対象を次の 2 コマンドへ分離する。
-
-```bash
-cd [worktree_dir] && make lint format typecheck
-cd [worktree_dir] && node scripts/baseline-precheck.ts --validate
-```
+Vitest を一括で実行する（AGENTS.md の pre-commit 契約と同一）。既知失敗の許容や比較 mode はなく、artifact が
+`clean` 以外なら停止する。
 
 特定マーカーや変更タイプ固有の検証が必要な場合は、設計書「テスト戦略」に従い追加実行する:
 
@@ -154,9 +149,8 @@ cd [worktree_dir] && node scripts/baseline-precheck.ts --validate
 | 通常                           | 追加なし（`make check` で十分）                    |
 
 > **baseline failure の扱い**:
-> `[worktree]/.kaji-artifacts/baseline/baseline.json` が `known_failures`
-> の場合、上記の分離 gate を使う。 `verdict: ok`、regression
-> 0 件だけを許可する。詳細は
+> `[worktree]/.kaji-artifacts/baseline/baseline.json` は `clean`
+> だけを許可する。詳細は
 > [docs/dev/baseline-check.md](../../../docs/dev/baseline-check.md)
 > を正本とする。
 
@@ -304,7 +298,7 @@ BODY=$(./scripts/kaji issue view [issue_id] --json body -q '.body')
 | issue-design | ✅ | 設計書作成済み |
 | issue-review-design | ✅ | Approve |
 | (fix-design → verify-design) | (経由した場合) | (Approve) |
-| issue-implement | ✅ | テスト全件 PASSED（または baseline 一致） |
+| issue-implement | ✅ | テスト全件 PASSED |
 | issue-review-code | ✅ | Approve |
 | (fix-code → verify-code) | (経由した場合) | (Approve) |
 

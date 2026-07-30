@@ -88,12 +88,11 @@ BACK 等で再入し、設計書が前回 Read 後に変わっている場合は
 `[worktree_dir]/.kaji-artifacts/baseline/baseline.json`
 を確認する。コメントを正本として検索しない。
 
-- artifact 不在・Pydantic 検証失敗・`measured_commit`
-  が HEAD の ancestor でない場合は停止し、baseline step の再実行を案内する
-- `clean`: 継続
-- `known_failures`: 設計書「変更スコープ」の path を `--evaluate --scope <path>`
-  へ渡す。 `stop: true` または意味的に同一機能へ影響する場合は停止する
-- `blocked` / `invalid`: implement へ到達してはならない前提違反として停止する
+- `node scripts/baseline-precheck.ts --validate` で schema、Issue、branch、
+  `measured_commit` の ancestor 関係を検証する
+- artifact 不在・検証失敗・`clean` 以外は停止し、baseline
+  step の再実行を案内する
+- TypeScript baseline は clean-only であり、既知失敗の許容や比較 mode を持たない
 
 ### Step 2.6: type 判定と type 別ガイド
 
@@ -121,8 +120,8 @@ quickref の「状況 → 正本」表に従い、まず必要なセクション
 - **TypeScript コードを書く前**:
   AGENTS.md の契約に従い、`docs/reference/typescript-standards.md`
   をロードする。既に同一内容を読んだ場合は再 Read しない
-- docs 更新判断時: `docs/dev/documentation_update_criteria.md` の該当節
-- 完了条件確認時: `docs/dev/workflow_completion_criteria.md` の該当節
+- docs 更新判断時: `docs/dev/documentation-update-criteria.md` の該当節
+- 完了条件確認時: `docs/dev/workflow-completion-criteria.md` の該当節
 - workflow 全体や戻り先が不明な場合だけ: `docs/dev/kaji-workflow.md` の該当節
 
 ### Step 3: テスト実装（Red）
@@ -148,8 +147,7 @@ cd [worktree_dir] && npm test --
 cd [worktree_dir] && npm test --
 ```
 
-baseline が `known_failures` の場合は、Green 確認時も最終的に `--compare` の
-`regressions` が空になるまで修正する。
+Green 確認では全 Vitest corpus が失敗 0 件になるまで修正する。
 
 ### Step 5: Refactor
 
@@ -159,52 +157,25 @@ net 契約を維持する。
 ### Step 6: docs 更新
 
 設計書「影響ドキュメント」で「あり」の文書を更新する。判断境界が必要な時だけ
-`documentation_update_criteria.md` の該当節を読む。
+`documentation-update-criteria.md` の該当節を読む。
 
 ### Step 7: 品質チェック（コミット前必須）
 
 AGENTS.md の pre-commit 契約を通し、出力を Step 8.5（Pre-Handoff
 Review の入力）と Step 9（証跡）の両方で使えるよう保持する。
 
-baseline artifact が `clean` なら `make check` を実行し、exit
-0 と全出力を記録する。以下の 7a /
-7b はその内訳であり、同じコマンドを重複実行しない。Step 8.5 / Step
-9 が要求する Vitest 出力と ESLint / format / TypeScript 出力は、この
-`make check`
-の出力から該当部分を切り出して使う（証跡取得のための再実行はしない）。
-
-artifact が `known_failures` の場合だけ 7a / 7b に分離する。この例外でも
-`make check` の全対象（`src/ tests/ scripts/` の ESLint / format /
-TypeScript、全 Vitest）を省略しない。
-
-#### 7a. Lint / Format / 型チェック（exit 0 必須）
-
-```bash
-cd [worktree_dir] && make lint format typecheck
-```
-
-全項目必須。`ESLint format --check` は非破壊 gate とし、修正には `make fmt`
-を使って再実行する。
-
-#### 7b. Vitest regression 比較
-
-```bash
-cd [worktree_dir] && node scripts/baseline-precheck.ts --validate
-```
-
-`--compare` が Vitest を実行し、artifact の3タプルと機械比較する。
-`verdict: ok`、`regressions: []` が必須。`stale_baseline` / `missing_baseline`
-は比較不能として停止する。
-
-上記 7a / 7b は baseline failure がある場合に限り、`make check` の ESLint /
-Prettier / TypeScript /
-Vitest 契約を同じ対象へ分離実行したもの。いずれかが基準を満たさなければコミットしない。
+clean baseline artifact を `node scripts/baseline-precheck.ts --validate`
+で確認してから `make check` を実行し、両方の exit
+0 と全出力を記録する。`make check`
+が要求する Vitest、ESLint、Prettier、TypeScript、build、workflow、static
+verification を分離・省略しない。Step 8.5 / Step
+9 の証跡はこの出力から取得し、証跡だけを目的に再実行しない。
 
 ### Step 7.5: 完了条件の段階確認
 
 Issue 本文 `## 完了条件`
 のうち、実装・テスト・docs で確認できる条件を照合する。判断に必要な場合だけ
-`workflow_completion_criteria.md`
+`workflow-completion-criteria.md`
 の「各ステップの証跡責務」周辺を部分 Read し、結果を Step 9 に含める。
 
 ### Step 8: コミット

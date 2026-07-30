@@ -110,28 +110,20 @@ GitHub 数値 ID なら `#<issue_id>`、`local-*` 形式なら bare ID（`#`
 
 2. **品質チェック（コミット前必須）**:
 
-   以下を実行し、**すべての基準をクリアするまでコミットしてはならない**。失敗した場合は原因を修正して再実行すること。AGENTS.md の pre-commit 契約（`make check`）と等価。artifact が
-   `known_failures` の場合は Vitest を deterministic `--compare`
-   に置換して分離する。
-
-   #### 3.1 Lint / Format / 型チェック（exit 0 必須）
+   以下を実行し、**すべての基準をクリアするまでコミットしてはならない**。失敗した場合は原因を修正して再実行すること。TypeScript
+   baseline は clean-only であり、既知失敗の許容や比較 mode はない。
 
    ```bash
-   cd [worktree_dir] && make lint format typecheck
+   cd [worktree_dir] && node scripts/baseline-precheck.ts --validate
+   cd [worktree_dir] && make check
    ```
 
    > `ESLint format --check` は非破壊 gate（`make check`
    > と等価）。整形差分で FAIL した場合は `make fmt`
    > で整形し、生じた差分をコミット対象に含めてから再チェックすること。
 
-   #### 3.2 テスト実行
-
-   ```bash
-   cd [worktree_dir] && node scripts/baseline-precheck.ts --validate
-   ```
-
-   合否判定は `issue-implement` Step 7b と同一とし、`verdict: ok`、regression
-   0 件を必須とする。artifact / stale 判定の正本は
+   clean artifact と `make check` exit 0 を必須とする。artifact /
+   stale 判定の正本は
    [docs/dev/baseline-check.md](../../../docs/dev/baseline-check.md)。
 
 ### Step 4: コミット

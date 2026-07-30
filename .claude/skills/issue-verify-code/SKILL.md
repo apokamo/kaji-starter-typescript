@@ -97,10 +97,9 @@ GitHub 数値 ID なら `#<issue_id>`、`local-*` 形式なら bare ID（`#`
 
 3. **Baseline artifact の確認**:
    [docs/dev/baseline-check.md](../../../docs/dev/baseline-check.md)
-   に従い固定 path の artifact を確認する。regression 判定は
-   `node scripts/baseline-precheck.ts --validate` を使い、
-   `verdict: ok`、regression
-   0 件を必須とする。Issue コメントは正本として検索しない。
+   に従い固定 path の clean artifact を確認する。
+   `node scripts/baseline-precheck.ts --validate`
+   を使い、schema、Issue、branch、ancestor の一致を必須とする。既知失敗の許容や比較 mode はない。Issue コメントは正本として検索しない。
 
 4. **修正差分を確認**:
    ```bash

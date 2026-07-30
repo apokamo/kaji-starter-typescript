@@ -5,6 +5,7 @@ import {
   verifyChecksum,
   verifyPackagePolicy,
 } from "../scripts/verify-static.ts";
+import { resolveActionlintRelease } from "../scripts/setup-tools.ts";
 
 const validPackage = {
   engines: { node: ">=24.12 <25" },
@@ -34,6 +35,23 @@ test(
 test.each([
   [{ ...validPackage, packageManager: "npm@latest" }, /npm/i],
   [{ ...validPackage, allowScripts: {} }, /allowScripts/i],
+  [
+    {
+      ...validPackage,
+      devEngines: {
+        ...validPackage.devEngines,
+        runtime: {
+          ...validPackage.devEngines.runtime,
+          version: "24.18.0",
+        },
+      },
+    },
+    /24\.18\.1/,
+  ],
+  [
+    { ...validPackage, allowScripts: { "fsevents@latest": true } },
+    /version-pinned/i,
+  ],
 ])(
   "rejects weakened package policy",
   { tags: ["medium"] },
@@ -49,6 +67,23 @@ test.each([
   },
 );
 
+test.each(["engine-strict", "strict-peer-deps"])(
+  "rejects a missing or disabled npm policy",
+  { tags: ["medium"] },
+  (setting) => {
+    const npmSettings: Record<string, string> = {
+      "engine-strict": "true",
+      "strict-peer-deps": "true",
+      "strict-allow-scripts": "true",
+      "allow-scripts-pin": "true",
+    };
+    npmSettings[setting] = "false";
+    expect(() => verifyPackagePolicy(validPackage, npmSettings)).toThrow(
+      new RegExp(setting),
+    );
+  },
+);
+
 test("rejects mutable GitHub Action references", { tags: ["medium"] }, () => {
   expect(() =>
     verifyActionReferences("steps:\n  - uses: actions/checkout@v4\n"),
@@ -60,3 +95,23 @@ test("rejects a modified tool archive checksum", { tags: ["medium"] }, () => {
     /checksum mismatch/i,
   );
 });
+
+test("rejects an unsupported tool checksum entry", { tags: ["medium"] }, () => {
+  expect(() => verifyChecksum("0".repeat(64), "")).toThrow(
+    /checksum mismatch/i,
+  );
+});
+
+test(
+  "resolves only the checksum-pinned actionlint platform matrix",
+  { tags: ["medium"] },
+  () => {
+    expect(resolveActionlintRelease("linux", "x64")).toMatchObject({
+      archivePlatform: "linux_amd64",
+      platform: "linux-x64",
+    });
+    expect(() => resolveActionlintRelease("win32", "x64")).toThrow(
+      /unsupported actionlint platform/i,
+    );
+  },
+);

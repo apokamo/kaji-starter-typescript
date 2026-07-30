@@ -29,3 +29,7 @@ test("rejects focused tests", { tags: ["small"] }, () => {
     ]),
   ).toThrow(/only/i);
 });
+
+test("rejects a corpus with zero collected tests", { tags: ["small"] }, () => {
+  expect(() => auditTagRecords([])).toThrow(/zero tests/i);
+});

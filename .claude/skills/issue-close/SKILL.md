@@ -74,7 +74,7 @@ GitHub 数値 ID なら `#<issue_id>`、`local-*` 形式なら bare ID（`#`
 ## 共通: ワークフロー完了後の確認項目の移管
 
 親 Issue を close する直前に、provider に関係なく本手順を実行する。正本は
-[`docs/dev/workflow_completion_criteria.md`](../../../docs/dev/workflow_completion_criteria.md)
+[`docs/dev/workflow-completion-criteria.md`](../../../docs/dev/workflow-completion-criteria.md)
 § follow-up Issue への移管、本文 template は
 [`templates/follow-up-issue.md`](templates/follow-up-issue.md) とする。
 
@@ -160,7 +160,7 @@ jq -r --arg title "$FOLLOW_UP_TITLE" \
 - `[parent_issue_ref]` / `[parent_issue_title]`
 - `[unchecked_items]`: 抽出した未チェック項目だけ
 - `[reference_docs]`: 親本文の `docs/...` 参照。なければ正本
-  `docs/dev/workflow_completion_criteria.md`
+  `docs/dev/workflow-completion-criteria.md`
 
 ```bash
 CREATE_OUTPUT=$(./scripts/kaji issue create \

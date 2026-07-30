@@ -52,8 +52,8 @@ $ARGUMENTS = <issue_id>
 
 ## 前提知識の読み込み
 
-1. [docs/dev/documentation_update_criteria.md](../../../docs/dev/documentation_update_criteria.md)
-2. [docs/dev/shared_skill_rules.md](../../../docs/dev/shared_skill_rules.md)
+1. [docs/dev/documentation-update-criteria.md](../../../docs/dev/documentation-update-criteria.md)
+2. [docs/dev/shared-skill-rules.md](../../../docs/dev/shared-skill-rules.md)
 
 ## 実行手順
 
@@ -75,7 +75,7 @@ $ARGUMENTS = <issue_id>
 
 ### Step 2: レビュー
 
-[docs/dev/documentation_update_criteria.md](../../../docs/dev/documentation_update_criteria.md)
+[docs/dev/documentation-update-criteria.md](../../../docs/dev/documentation-update-criteria.md)
 の 3 観点（事実整合性・実装整合性・運用整合性）で厳格にレビューする。
 
 1. 現行実装と一致しているか

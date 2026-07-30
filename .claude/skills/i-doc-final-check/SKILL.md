@@ -50,9 +50,9 @@ GitHub 数値 ID なら `#<issue_id>`、`local-*` 形式なら bare ID（`#`
 ## 前提知識の読み込み
 
 1. [docs/dev/kaji-workflow.md](../../../docs/dev/kaji-workflow.md)
-2. [docs/dev/workflow_completion_criteria.md](../../../docs/dev/workflow_completion_criteria.md)
-3. [docs/dev/documentation_update_criteria.md](../../../docs/dev/documentation_update_criteria.md)
-4. [docs/dev/shared_skill_rules.md](../../../docs/dev/shared_skill_rules.md)
+2. [docs/dev/workflow-completion-criteria.md](../../../docs/dev/workflow-completion-criteria.md)
+3. [docs/dev/documentation-update-criteria.md](../../../docs/dev/documentation-update-criteria.md)
+4. [docs/dev/shared-skill-rules.md](../../../docs/dev/shared-skill-rules.md)
 5. `docs/README.md`
 
 ## 実施内容

@@ -51,8 +51,8 @@ $ARGUMENTS = <issue_id>
 
 ## 前提知識の読み込み
 
-1. [docs/dev/documentation_update_criteria.md](../../../docs/dev/documentation_update_criteria.md)
-2. [docs/dev/shared_skill_rules.md](../../../docs/dev/shared_skill_rules.md)
+1. [docs/dev/documentation-update-criteria.md](../../../docs/dev/documentation-update-criteria.md)
+2. [docs/dev/shared-skill-rules.md](../../../docs/dev/shared-skill-rules.md)
 
 ## 実行手順
 

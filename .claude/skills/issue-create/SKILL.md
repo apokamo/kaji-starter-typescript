@@ -122,7 +122,7 @@ feat のユースケース、bug の OB/EB、refactor の測定指標、docs の
   を置く。workflow を RETRY して環境非依存で同じ結果を得られない merge 後・実機適用後・外部応答後の確認だけをここへ分離する
 - 事後確認がなければ同サブセクションは `- なし`
   とし、未チェックの placeholder を残さない
-- 分類の正本は `docs/dev/workflow_completion_criteria.md` §
+- 分類の正本は `docs/dev/workflow-completion-criteria.md` §
   workflow 内完了条件と事後確認の分離
 
 ### Step 4: Issue 作成とラベル付与

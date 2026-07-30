@@ -42,11 +42,9 @@ context には依存しない）。
 
    Step
    7 の出力はいずれの経路でも保持済みであり、証跡取得のために同じコマンドを再実行しない。
-   - `[worktree_dir]/.kaji-artifacts/baseline/baseline.json`
-     の全文。`status: known_failures` の場合は Step 7b `--compare`
-     出力も取得する。`status: clean` の場合は `make check`
-     の Vitest 出力を最終結果とし、証跡取得だけを目的に `--compare`
-     を再実行しない
+   - `[worktree_dir]/.kaji-artifacts/baseline/baseline.json` の全文。status は
+     `clean` だけを許可し、`make check`
+     の Vitest 出力を最終結果とする。証跡取得だけを目的に再実行しない
    - 対象 commit hash
 
 2. Agent tool で `subagent_type: "kaji-code-reviewer"`
@@ -86,8 +84,7 @@ context には依存しない）。
 
    ## Baseline Failures
 
-   (baseline.json。known_failures 時は `--compare`
-   JSON も添付。artifact 不在は handoff 不可)
+   (clean baseline.json。artifact 不在・stale・非 clean は handoff 不可)
    ````
 
 3. subagent が返した Markdown 出力を Step
@@ -116,8 +113,8 @@ workflow の正式 verdict ではない。
 | verdict                               | 取り扱い                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `Yes`                                 | handoff 可。Step 9（実装完了報告）へ進む（実装コミットは Step 8 で確定済み）                                                                                                                                                                                                                                                                                                                                                                                                         |
-| `With fixes`                          | main session が指摘事項を反映 → Step 7 の品質チェックを再実行（clean baseline なら `make check`、baseline failure 時は 7a / 7b）→ `git add` で修正をステージ → `git commit --amend --no-edit` で実装コミットを更新 → 本 Step 8.5 を再実行（ループ）                                                                                                                                                                                                                                  |
-| `No`                                  | 大幅な修正が必要。main session が修正 → Step 7 の品質チェックを再実行（同上）→ `git add` で修正をステージ → `git commit --amend --no-edit` で実装コミットを更新 → 本 Step 8.5 を再実行                                                                                                                                                                                                                                                                                               |
+| `With fixes`                          | main session が指摘事項を反映 → Step 7 の `make check` を再実行 → `git add` で修正をステージ → `git commit --amend --no-edit` で実装コミットを更新 → 本 Step 8.5 を再実行（ループ）                                                                                                                                                                                                                                                                                                  |
+| `No`                                  | 大幅な修正が必要。main session が修正 → Step 7 の `make check` を再実行 → `git add` で修正をステージ → `git commit --amend --no-edit` で実装コミットを更新 → 本 Step 8.5 を再実行                                                                                                                                                                                                                                                                                                    |
 | verdict 行が出力されない / parse 不能 | subagent が `maxTurns` 打ち切り等で `Pre-Handoff Review Verdict` セクション、または `Yes` / `No` / `With fixes` のいずれも返さなかった場合。**一度だけ** 経路 B（self-check）に fallback して再実行する。経路情報は `self-check (subagent unparseable, fallback)` と明記。fallback でも parse 不能なら main session 出力の全文を Issue コメントに転記し verdict 欄を `No`（修正必須）扱いとして次のループに進める。**無限再起動を避けるため、subagent 経路への再 fallback はしない** |
 
 > **`--amend` を採る理由**: 実装を単一の実装コミット（Issue
@@ -213,7 +210,7 @@ subagent / self-check 共通の出力は `.claude/agents/kaji-code-reviewer.md`
 > `Fix(e[sd]|ing)?` / `Resolv(e[sd]?|ing)` / `Implement(s|ing|ed)?` の直後
 > `#[0-9]`）を書かない。指摘参照は `指摘 N` / `Must Fix item N` / `point N`
 > 形式に統一する（参照:
-> [`docs/dev/shared_skill_rules.md`](../../../../docs/dev/shared_skill_rules.md)
+> [`docs/dev/shared-skill-rules.md`](../../../../docs/dev/shared-skill-rules.md)
 > § auto close keyword 回避規約）。
 
 #### Step 8.5.5: Pre-Handoff Review 証跡投稿（MANDATORY）

@@ -6,7 +6,10 @@ import { parse } from "yaml";
 
 import {
   verifyActionReferences,
+  verifyConsumerText,
   verifyPackagePolicy,
+  verifySkillMetadata,
+  verifyTemplateIdentity,
 } from "./verify-static.ts";
 
 function readJson(filename: string): unknown {
@@ -85,12 +88,7 @@ for (const name of readdirSync(".claude/skills")) {
   const skillPath = path.join(".claude/skills", name, "SKILL.md");
   try {
     const skill = readFileSync(skillPath, "utf8");
-    const frontmatter = parse(skill.split("---", 3)[1] ?? "") as {
-      name?: string;
-    };
-    if (frontmatter.name !== name) {
-      throw new Error(`Skill frontmatter does not match directory: ${name}`);
-    }
+    verifySkillMetadata(name, skill);
   } catch (error) {
     if (name !== "_shared") throw error;
   }
@@ -112,30 +110,15 @@ for (const root of consumerRoots) {
   for (const filename of candidates) {
     if (lstatSync(filename).isFile()) {
       const text = readFileSync(filename, "utf8");
-      for (const forbidden of [
-        ".kaji/wf/official/",
-        ".venv/bin/",
-        "pytest",
-        "ruff",
-        "mypy",
-        "uv run kaji",
-      ]) {
-        if (text.includes(forbidden)) {
-          throw new Error(
-            `Forbidden consumer vocabulary ${forbidden}: ${filename}`,
-          );
-        }
-      }
+      verifyConsumerText(filename, text);
     }
   }
 }
-const pristinePackage = packageJson.name === "starter-app";
-const pristineRepository = readFileSync(".kaji/config.toml", "utf8").includes(
-  'repo = "apokamo/starter-app"',
-);
-if (pristinePackage !== pristineRepository) {
-  throw new Error("Template identity is only partially customized");
-}
+const repository =
+  readFileSync(".kaji/config.toml", "utf8").match(
+    /repo\s*=\s*"([^"]+)"/,
+  )?.[1] ?? "";
+verifyTemplateIdentity(packageJson.name, repository);
 execFileSync(".tools/actionlint", [".github/workflows/ci.yml"], {
   stdio: "inherit",
 });

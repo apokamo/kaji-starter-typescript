@@ -90,7 +90,7 @@ GitHub 数値 ID なら `#<issue_id>`、`local-*` 形式なら bare ID（`#`
 
 通常完了条件に workflow 外の確認が混在しているという指摘は、次の手順で修正する。
 
-1. `docs/dev/workflow_completion_criteria.md` §
+1. `docs/dev/workflow-completion-criteria.md` §
    workflow 内完了条件と事後確認の分離を読む
 2. 各項目について、workflow を RETRY して環境非依存で同じ結果を得られるか判定する
 3. No の項目だけを `## 完了条件` の末尾サブセクション

@@ -10,11 +10,12 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
+import { pathToFileURL } from "node:url";
 
 import { verifyChecksum } from "./verify-static.ts";
 
 const VERSION = "1.7.12";
-const CHECKSUMS = {
+const CHECKSUMS: Readonly<Record<string, string>> = {
   "darwin-arm64":
     "aba9ced2dee8d27fecca3dc7feb1a7f9a52caefa1eb46f3271ea66b6e0e6953f",
   "darwin-x64":
@@ -23,48 +24,69 @@ const CHECKSUMS = {
     "325e971b6ba9bfa504672e29be93c24981eeb1c07576d730e9f7c8805afff0c6",
   "linux-x64":
     "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8",
-} as const;
+};
 
-const platform =
-  `${process.platform}-${process.arch}` as keyof typeof CHECKSUMS;
-const checksum = CHECKSUMS[platform];
-if (checksum === undefined) {
-  throw new Error(`Unsupported actionlint platform: ${platform}`);
+export function resolveActionlintRelease(
+  platform: string,
+  architecture: string,
+): { archivePlatform: string; checksum: string; platform: string } {
+  const platformKey = `${platform}-${architecture}`;
+  const checksum = CHECKSUMS[platformKey];
+  if (checksum === undefined) {
+    throw new Error(`Unsupported actionlint platform: ${platformKey}`);
+  }
+  return {
+    platform: platformKey,
+    checksum,
+    archivePlatform: `${platform}_${architecture === "x64" ? "amd64" : "arm64"}`,
+  };
 }
-const archivePlatform = `${process.platform}_${process.arch === "x64" ? "amd64" : "arm64"}`;
-const archiveName = `actionlint_${VERSION}_${archivePlatform}.tar.gz`;
-const response = await fetch(
-  `https://github.com/rhysd/actionlint/releases/download/v${VERSION}/${archiveName}`,
-);
-if (!response.ok) {
-  throw new Error(`Failed to download actionlint: HTTP ${response.status}`);
+
+async function main(): Promise<void> {
+  const release = resolveActionlintRelease(process.platform, process.arch);
+  const archiveName = `actionlint_${VERSION}_${release.archivePlatform}.tar.gz`;
+  const response = await fetch(
+    `https://github.com/rhysd/actionlint/releases/download/v${VERSION}/${archiveName}`,
+  );
+  if (!response.ok) {
+    throw new Error(`Failed to download actionlint: HTTP ${response.status}`);
+  }
+  const archive = Buffer.from(await response.arrayBuffer());
+  const actual = createHash("sha256").update(archive).digest("hex");
+  verifyChecksum(actual, release.checksum);
+  const temporaryDirectory = await mkdtemp(join(tmpdir(), "actionlint-"));
+  const archivePath = join(temporaryDirectory, archiveName);
+  await writeFile(archivePath, archive);
+  const extraction = spawnSync(
+    "tar",
+    ["-xzf", archivePath, "-C", temporaryDirectory],
+    {
+      encoding: "utf8",
+    },
+  );
+  if (extraction.status !== 0) {
+    throw new Error(`Failed to extract actionlint: ${extraction.stderr}`);
+  }
+  const destinationDirectory = ".tools";
+  await mkdir(destinationDirectory, { recursive: true });
+  const temporaryBinary = join(
+    destinationDirectory,
+    `actionlint.tmp-${process.pid}`,
+  );
+  await writeFile(
+    temporaryBinary,
+    await readFile(join(temporaryDirectory, "actionlint")),
+  );
+  await chmod(temporaryBinary, 0o755);
+  await rename(temporaryBinary, join(destinationDirectory, "actionlint"));
+  process.stdout.write(
+    `Installed actionlint v${VERSION} (${release.platform})\n`,
+  );
 }
-const archive = Buffer.from(await response.arrayBuffer());
-const actual = createHash("sha256").update(archive).digest("hex");
-verifyChecksum(actual, checksum);
-const temporaryDirectory = await mkdtemp(join(tmpdir(), "actionlint-"));
-const archivePath = join(temporaryDirectory, archiveName);
-await writeFile(archivePath, archive);
-const extraction = spawnSync(
-  "tar",
-  ["-xzf", archivePath, "-C", temporaryDirectory],
-  {
-    encoding: "utf8",
-  },
-);
-if (extraction.status !== 0) {
-  throw new Error(`Failed to extract actionlint: ${extraction.stderr}`);
+
+if (
+  process.argv[1] !== undefined &&
+  import.meta.url === pathToFileURL(process.argv[1]).href
+) {
+  await main();
 }
-const destinationDirectory = ".tools";
-await mkdir(destinationDirectory, { recursive: true });
-const temporaryBinary = join(
-  destinationDirectory,
-  `actionlint.tmp-${process.pid}`,
-);
-await writeFile(
-  temporaryBinary,
-  await readFile(join(temporaryDirectory, "actionlint")),
-);
-await chmod(temporaryBinary, 0o755);
-await rename(temporaryBinary, join(destinationDirectory, "actionlint"));
-process.stdout.write(`Installed actionlint v${VERSION} (${platform})\n`);

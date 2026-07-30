@@ -128,30 +128,22 @@ PHR_ROUTE_COUNT=$(./scripts/kaji issue view [issue_id] --comments 2>/dev/null | 
 
 1. **Baseline artifact の確認**:
    [docs/dev/baseline-check.md](../../../docs/dev/baseline-check.md) に従い、
-   `[worktree_dir]/.kaji-artifacts/baseline/baseline.json` を Pydantic 検証し、
-   `measured_commit`
-   が HEAD の ancestor であることを確認する。コメントは参照しない。
+   `node scripts/baseline-precheck.ts --validate` で固定 path の artifact
+   schema と `measured_commit`
+   の ancestor 関係を確認する。コメントは参照しない。
 
-2. **Lint / Format / 型チェック（exit 0 必須）**:
-
-   ```bash
-   cd [worktree_dir] && make lint format typecheck
-   ```
-
-3. **テスト実行と regression 比較**:
+2. **独立品質ゲート（exit 0 必須）**:
 
    ```bash
-   cd [worktree_dir] && node scripts/baseline-precheck.ts --validate
+   cd [worktree_dir] && make check
    ```
 
-   `--compare` が全 Vitest を実行し、artifact と3タプル比較する。
-
-4. **合否判定**:
+3. **合否判定**:
    - ESLint check / ESLint format / TypeScript: exit 0 必須
-   - `--compare`: `verdict: ok` かつ `regressions: []` 必須
-   - `regression` / `stale_baseline` / `missing_baseline`: **Changes Requested**
+   - 全 Vitest corpus: failure 0 必須
+   - artifact が `clean` 以外、stale、missing: **Changes Requested**
 
-5. テスト総数、passed/failed/errors/skipped を記録しておく（Step
+4. テスト総数、passed/failed/errors/skipped を記録しておく（Step
    3 のコメントに含める）。
 
 > 最終ゲートは `i-dev-final-check` で artifact
@@ -281,8 +273,8 @@ Issue 本文に `## 完了条件`
 |------|------|
 | ESLint check / ESLint format --check / TypeScript | PASS / FAIL |
 | Vitest 総数 / passed / failed / errors / skipped | XX / XX / XX / XX / XX |
-| baseline failure 一致 | YY 件（Issue: ___ ） |
-| 新規 FAILED/ERROR (regression) | 0 件 |
+| baseline artifact | clean / stale / missing |
+| FAILED/ERROR | 0 件 |
 
 ## type 別追加観点の判定
 

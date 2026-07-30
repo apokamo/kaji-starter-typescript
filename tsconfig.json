@@ -28,5 +28,6 @@
     "scripts/**/*.ts",
     "vitest.config.ts",
     "vitest.shims.ts"
-  ]
+  ],
+  "exclude": ["tests/fixtures"]
 }

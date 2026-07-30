@@ -433,7 +433,7 @@ i-dev-final-check 等>）を確認し、設計書の以下箇所を修正しま�
 > `Fix(e[sd]|ing)?` / `Resolv(e[sd]?|ing)` / `Implement(s|ing|ed)?` の直後
 > `#[0-9]`）を書かない。指摘参照は `指摘 N` / `Must Fix item N` / `point N`
 > 形式に統一する（参照:
-> [`docs/dev/shared_skill_rules.md`](../../../docs/dev/shared_skill_rules.md) §
+> [`docs/dev/shared-skill-rules.md`](../../../docs/dev/shared-skill-rules.md) §
 > auto close keyword 回避規約）。
 
 #### Step 1.7 終了後の挙動
@@ -607,7 +607,7 @@ Issue: [issue_ref]
    - 技術制約や前提条件が設計書に反映されているか
 
 4. **workflow 内 / workflow 外の分離確認**:
-   `docs/dev/workflow_completion_criteria.md` §
+   `docs/dev/workflow-completion-criteria.md` §
    workflow 内完了条件と事後確認の分離に従い、workflow を RETRY して環境非依存で同じ結果を得られない項目が通常完了条件へ混在していないか確認する。誤分類を見つけた場合は、現在の Issue 本文を取得し、項目の文言とチェック状態を維持したまま
    `## 完了条件` の末尾サブセクション `### ワークフロー完了後の確認項目`
    との間で移動し、
@@ -716,7 +716,7 @@ SKILL.md を **rubric の単一情報源** として参照し、不足があれ�
 > `Fix(e[sd]|ing)?` / `Resolv(e[sd]?|ing)` / `Implement(s|ing|ed)?` の直後
 > `#[0-9]`）を書かない。指摘参照は `指摘 N` / `Must Fix item N` / `point N`
 > 形式に統一する（参照:
-> [`docs/dev/shared_skill_rules.md`](../../../docs/dev/shared_skill_rules.md) §
+> [`docs/dev/shared-skill-rules.md`](../../../docs/dev/shared-skill-rules.md) §
 > auto close keyword 回避規約）。
 
 ### Step 3: コミット

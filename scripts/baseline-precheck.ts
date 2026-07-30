@@ -1,11 +1,21 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import path from "node:path";
 
 import { z } from "zod";
 
 import {
+  BaselineArtifactSchema,
   classifyVitestReport,
+  evaluateBaselineGuards,
+  sanitizeFailure,
   validateReusableArtifact,
 } from "./baseline-core.ts";
 
@@ -16,32 +26,6 @@ const environmentSchema = z.object({
   KAJI_PROVIDER_TYPE: z.enum(["github", "local"]),
   KAJI_WORKTREE_DIR: z.string().min(1),
   KAJI_VERDICT_PATH: z.string().min(1),
-});
-
-const artifactSchema = z.object({
-  schemaVersion: z.literal(1),
-  issueId: z.string(),
-  branch: z.string(),
-  measuredCommit: z.string(),
-  measuredAt: z.string(),
-  runner: z.literal("vitest"),
-  command: z.array(z.string()),
-  exitCode: z.number().int(),
-  summary: z.object({
-    total: z.number().int(),
-    passed: z.number().int(),
-    failed: z.number().int(),
-    skipped: z.number().int(),
-    todo: z.number().int(),
-  }),
-  status: z.enum(["clean", "blocked", "invalid"]),
-  stopReason: z.string().nullable(),
-  failures: z.array(
-    z.object({
-      identity: z.string(),
-      messageHead: z.string(),
-    }),
-  ),
 });
 
 function atomicWrite(filename: string, text: string): void {
@@ -57,20 +41,284 @@ function git(worktree: string, ...arguments_: string[]): string {
   }).trim();
 }
 
-function writeVerdict(
-  filename: string,
+function verdictYaml(
   status: "ABORT" | "PASS",
   reason: string,
   evidence: string,
-): void {
-  const yaml = `status: ${status}\nreason: ${JSON.stringify(reason)}\nevidence: |\n  ${evidence.replaceAll("\n", "\n  ")}\nsuggestion: ${JSON.stringify(
+): string {
+  return `status: ${status}\nreason: ${JSON.stringify(reason)}\nevidence: |\n  ${evidence.replaceAll("\n", "\n  ")}\nsuggestion: ${JSON.stringify(
     status === "PASS" ? "" : "Fix the baseline failure before implementation",
   )}\n`;
+}
+
+function writeVerdict(filename: string, yaml: string): void {
   atomicWrite(filename, yaml);
   process.stdout.write(`---VERDICT---\n${yaml}---END_VERDICT---\n`);
 }
 
+function postBaselineComment(
+  environment: z.infer<typeof environmentSchema>,
+  worktree: string,
+  yaml: string,
+): void {
+  const commentPath = path.join(
+    worktree,
+    ".kaji-artifacts/baseline/baseline-comment.md",
+  );
+  atomicWrite(
+    commentPath,
+    `## TypeScript Baseline\n\nDeterministic clean-only baseline measurement.\n\n---VERDICT---\n${yaml}---END_VERDICT---\n`,
+  );
+  const posted = spawnSync(
+    path.join(worktree, "scripts/kaji"),
+    [
+      "issue",
+      "comment",
+      environment.KAJI_ISSUE_ID,
+      "--commit",
+      "--body-file",
+      commentPath,
+    ],
+    {
+      cwd: worktree,
+      encoding: "utf8",
+      env: process.env,
+    },
+  );
+  rmSync(commentPath, { force: true });
+  if (posted.status !== 0) {
+    throw new Error(
+      `Failed to post baseline evidence: exit ${posted.status ?? "unknown"}`,
+    );
+  }
+}
+
+function validateArtifact(
+  environment: z.infer<typeof environmentSchema>,
+  worktree: string,
+  artifactPath: string,
+): void {
+  const artifact = BaselineArtifactSchema.parse(
+    JSON.parse(readFileSync(artifactPath, "utf8")),
+  );
+  const ancestor = spawnSync(
+    "git",
+    [
+      "-C",
+      worktree,
+      "merge-base",
+      "--is-ancestor",
+      artifact.measuredCommit,
+      "HEAD",
+    ],
+    { cwd: worktree },
+  );
+  validateReusableArtifact(artifact, {
+    issueId: environment.KAJI_ISSUE_ID,
+    branch: environment.KAJI_BRANCH_NAME,
+    ancestors: new Set(ancestor.status === 0 ? [artifact.measuredCommit] : []),
+  });
+  const yaml = verdictYaml(
+    "PASS",
+    "Clean TypeScript baseline artifact is valid",
+    `measured_commit=${artifact.measuredCommit}; tests=${artifact.summary.total}`,
+  );
+  writeVerdict(environment.KAJI_VERDICT_PATH, yaml);
+}
+
+function measureBaseline(
+  environment: z.infer<typeof environmentSchema>,
+  worktree: string,
+  artifactPath: string,
+): void {
+  try {
+    const implementationPaths = git(
+      worktree,
+      "diff",
+      "--name-only",
+      `${environment.KAJI_DEFAULT_BRANCH}...HEAD`,
+    )
+      .split("\n")
+      .filter((filename) => filename !== "")
+      .filter((filename) => !filename.startsWith("draft/design/"));
+    evaluateBaselineGuards({
+      worktree: environment.KAJI_WORKTREE_DIR,
+      gitTopLevel: git(worktree, "rev-parse", "--show-toplevel"),
+      branch: git(worktree, "branch", "--show-current"),
+      expectedBranch: environment.KAJI_BRANCH_NAME,
+      status: git(worktree, "status", "--porcelain"),
+      implementationCommits: implementationPaths,
+      nodeVersion: execFileSync(process.execPath, ["--version"], {
+        cwd: worktree,
+        encoding: "utf8",
+      })
+        .trim()
+        .replace(/^v/, ""),
+      npmVersion: execFileSync("npm", ["--version"], {
+        cwd: worktree,
+        encoding: "utf8",
+      }).trim(),
+      lockfilePresent: existsSync(path.join(worktree, "package-lock.json")),
+      nodeModulesPresent: existsSync(path.join(worktree, "node_modules")),
+    });
+  } catch {
+    const artifact = BaselineArtifactSchema.parse({
+      schemaVersion: 1,
+      issueId: environment.KAJI_ISSUE_ID,
+      branch: environment.KAJI_BRANCH_NAME,
+      measuredCommit: git(worktree, "rev-parse", "HEAD"),
+      measuredAt: new Date().toISOString(),
+      runner: "vitest",
+      command: ["baseline-guard"],
+      exitCode: -1,
+      summary: {
+        total: 0,
+        passed: 0,
+        failed: 0,
+        skipped: 0,
+        todo: 0,
+      },
+      status: "invalid",
+      stopReason: "guard_failed",
+      failures: [],
+    });
+    atomicWrite(artifactPath, `${JSON.stringify(artifact, null, 2)}\n`);
+    const yaml = verdictYaml(
+      "ABORT",
+      "TypeScript baseline is invalid",
+      "status=invalid; total=0; failed=0; stop_reason=guard_failed",
+    );
+    postBaselineComment(environment, worktree, yaml);
+    writeVerdict(environment.KAJI_VERDICT_PATH, yaml);
+    return;
+  }
+
+  const diagnosticDirectory = path.join(worktree, ".kaji-artifacts/baseline");
+  mkdirSync(diagnosticDirectory, { recursive: true });
+  const reportPath = path.join(diagnosticDirectory, "vitest-report.json");
+  rmSync(reportPath, { force: true });
+  const command = [
+    "exec",
+    "--offline",
+    "--",
+    "vitest",
+    "run",
+    "--reporter=./scripts/test-tag-reporter.ts",
+    "--reporter=json",
+    `--outputFile=${reportPath}`,
+  ];
+  const testRun = spawnSync("npm", command, {
+    cwd: worktree,
+    encoding: "utf8",
+    env: process.env,
+  });
+
+  let rawReport: unknown = {};
+  let reportReadFailure = false;
+  try {
+    rawReport = JSON.parse(readFileSync(reportPath, "utf8"));
+  } catch {
+    reportReadFailure = true;
+  }
+  let classification =
+    testRun.status === 0 || testRun.status === 1
+      ? classifyVitestReport(rawReport)
+      : {
+          status: "invalid" as const,
+          stopReason: `unexpected_exit_code:${testRun.status ?? -1}`,
+        };
+  if (
+    reportReadFailure &&
+    testRun.status === 1 &&
+    testRun.stderr.includes("Test tag audit failed")
+  ) {
+    classification = { status: "blocked", stopReason: "tag_audit_failed" };
+  } else if (reportReadFailure) {
+    classification = {
+      status: "invalid",
+      stopReason: "missing_or_invalid_report",
+    };
+  }
+
+  const parsedReport = z
+    .object({
+      numTotalTests: z.number().int().default(0),
+      numPassedTests: z.number().int().default(0),
+      numFailedTests: z.number().int().default(0),
+      numPendingTests: z.number().int().default(0),
+      numTodoTests: z.number().int().default(0),
+      testResults: z
+        .array(
+          z.object({
+            assertionResults: z
+              .array(
+                z.object({
+                  fullName: z.string(),
+                  status: z.string(),
+                  failureMessages: z.array(z.string()).nullable(),
+                }),
+              )
+              .default([]),
+          }),
+        )
+        .default([]),
+    })
+    .passthrough()
+    .catch({
+      numTotalTests: 0,
+      numPassedTests: 0,
+      numFailedTests: 0,
+      numPendingTests: 0,
+      numTodoTests: 0,
+      testResults: [],
+    })
+    .parse(rawReport);
+  const artifact = BaselineArtifactSchema.parse({
+    schemaVersion: 1,
+    issueId: environment.KAJI_ISSUE_ID,
+    branch: environment.KAJI_BRANCH_NAME,
+    measuredCommit: git(worktree, "rev-parse", "HEAD"),
+    measuredAt: new Date().toISOString(),
+    runner: "vitest",
+    command: ["npm", ...command],
+    exitCode: testRun.status ?? -1,
+    summary: {
+      total: parsedReport.numTotalTests,
+      passed: parsedReport.numPassedTests,
+      failed: parsedReport.numFailedTests,
+      skipped: parsedReport.numPendingTests,
+      todo: parsedReport.numTodoTests,
+    },
+    status: classification.status,
+    stopReason: classification.stopReason,
+    failures: parsedReport.testResults.flatMap((file) =>
+      file.assertionResults
+        .filter((testCase) => testCase.status === "failed")
+        .map((testCase) =>
+          sanitizeFailure(
+            testCase.fullName,
+            testCase.failureMessages?.[0] ?? "test failed",
+            worktree,
+          ),
+        ),
+    ),
+  });
+  atomicWrite(artifactPath, `${JSON.stringify(artifact, null, 2)}\n`);
+  const yaml = verdictYaml(
+    artifact.status === "clean" ? "PASS" : "ABORT",
+    artifact.status === "clean"
+      ? "TypeScript baseline is clean"
+      : `TypeScript baseline is ${artifact.status}`,
+    `status=${artifact.status}; total=${artifact.summary.total}; failed=${artifact.summary.failed}; stop_reason=${artifact.stopReason ?? "none"}`,
+  );
+  postBaselineComment(environment, worktree, yaml);
+  writeVerdict(environment.KAJI_VERDICT_PATH, yaml);
+}
+
 const environment = environmentSchema.parse(process.env);
+if (!path.isAbsolute(environment.KAJI_WORKTREE_DIR)) {
+  throw new Error("KAJI_WORKTREE_DIR must be an absolute path");
+}
 const worktree = path.resolve(environment.KAJI_WORKTREE_DIR);
 if (git(worktree, "rev-parse", "--show-toplevel") !== worktree) {
   throw new Error("KAJI_WORKTREE_DIR does not match git top-level");
@@ -85,122 +333,7 @@ const artifactPath = path.join(
   ".kaji-artifacts/baseline/baseline.json",
 );
 if (process.argv.includes("--validate")) {
-  const artifact = artifactSchema.parse(
-    JSON.parse(readFileSync(artifactPath, "utf8")),
-  );
-  const ancestor = spawnSync("git", [
-    "-C",
-    worktree,
-    "merge-base",
-    "--is-ancestor",
-    artifact.measuredCommit,
-    "HEAD",
-  ]);
-  validateReusableArtifact(artifact, {
-    issueId: environment.KAJI_ISSUE_ID,
-    branch: environment.KAJI_BRANCH_NAME,
-    ancestors: new Set(ancestor.status === 0 ? [artifact.measuredCommit] : []),
-  });
-  writeVerdict(
-    environment.KAJI_VERDICT_PATH,
-    "PASS",
-    "Clean TypeScript baseline artifact is valid",
-    `measured_commit=${artifact.measuredCommit}; tests=${artifact.summary.total}`,
-  );
-  process.exit(0);
+  validateArtifact(environment, worktree, artifactPath);
+} else {
+  measureBaseline(environment, worktree, artifactPath);
 }
-if (git(worktree, "status", "--porcelain") !== "") {
-  writeVerdict(
-    environment.KAJI_VERDICT_PATH,
-    "ABORT",
-    "Baseline requires a clean worktree",
-    "git status --porcelain was non-empty",
-  );
-  process.exit(0);
-}
-const diagnosticDirectory = path.join(worktree, ".kaji-artifacts/baseline");
-mkdirSync(diagnosticDirectory, { recursive: true });
-const reportPath = path.join(diagnosticDirectory, "vitest-report.json");
-const command = [
-  "exec",
-  "--offline",
-  "--",
-  "vitest",
-  "run",
-  "--reporter=./scripts/test-tag-reporter.ts",
-  "--reporter=json",
-  `--outputFile=${reportPath}`,
-];
-const testRun = spawnSync("npm", command, {
-  cwd: worktree,
-  encoding: "utf8",
-  env: process.env,
-});
-const rawReport: unknown =
-  testRun.status === 0 || testRun.status === 1
-    ? JSON.parse(readFileSync(reportPath, "utf8"))
-    : {};
-const classification = classifyVitestReport(rawReport);
-const parsedReport = z
-  .object({
-    numTotalTests: z.number().int().default(0),
-    numPassedTests: z.number().int().default(0),
-    numFailedTests: z.number().int().default(0),
-    numPendingTests: z.number().int().default(0),
-    numTodoTests: z.number().int().default(0),
-    testResults: z
-      .array(
-        z.object({
-          assertionResults: z
-            .array(
-              z.object({
-                fullName: z.string(),
-                status: z.string(),
-                failureMessages: z.array(z.string()).nullable(),
-              }),
-            )
-            .default([]),
-        }),
-      )
-      .default([]),
-  })
-  .passthrough()
-  .parse(rawReport);
-const artifact = artifactSchema.parse({
-  schemaVersion: 1,
-  issueId: environment.KAJI_ISSUE_ID,
-  branch: environment.KAJI_BRANCH_NAME,
-  measuredCommit: git(worktree, "rev-parse", "HEAD"),
-  measuredAt: new Date().toISOString(),
-  runner: "vitest",
-  command: ["npm", ...command],
-  exitCode: testRun.status ?? -1,
-  summary: {
-    total: parsedReport.numTotalTests,
-    passed: parsedReport.numPassedTests,
-    failed: parsedReport.numFailedTests,
-    skipped: parsedReport.numPendingTests,
-    todo: parsedReport.numTodoTests,
-  },
-  status: classification.status,
-  stopReason: classification.stopReason,
-  failures: parsedReport.testResults.flatMap((file) =>
-    file.assertionResults
-      .filter((testCase) => testCase.status === "failed")
-      .map((testCase) => ({
-        identity: testCase.fullName,
-        messageHead: (testCase.failureMessages?.[0] ?? "test failed")
-          .split("\n", 1)[0]
-          ?.slice(0, 240),
-      })),
-  ),
-});
-atomicWrite(artifactPath, `${JSON.stringify(artifact, null, 2)}\n`);
-writeVerdict(
-  environment.KAJI_VERDICT_PATH,
-  artifact.status === "clean" ? "PASS" : "ABORT",
-  artifact.status === "clean"
-    ? "TypeScript baseline is clean"
-    : `TypeScript baseline is ${artifact.status}`,
-  `status=${artifact.status}; total=${artifact.summary.total}; failed=${artifact.summary.failed}`,
-);

@@ -11,6 +11,7 @@ export default tseslint.config(
       "coverage/**",
       "dist/**",
       "node_modules/**",
+      "tests/fixtures/**",
       "tools/kaji/**",
     ],
   },

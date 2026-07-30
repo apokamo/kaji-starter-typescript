@@ -299,7 +299,7 @@ EOF
 > `Fix(e[sd]|ing)?` / `Resolv(e[sd]?|ing)` / `Implement(s|ing|ed)?` の直後
 > `#[0-9]`）を本文に書かない。指摘参照は `指摘 N` / `point N` /
 > `Must Fix item N`
-> で統一する（[`docs/dev/shared_skill_rules.md`](../../../docs/dev/shared_skill_rules.md)
+> で統一する（[`docs/dev/shared-skill-rules.md`](../../../docs/dev/shared-skill-rules.md)
 > § auto close keyword 回避規約）。
 
 ### Step 7: 完了報告

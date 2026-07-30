@@ -78,7 +78,7 @@ GitHub 数値 ID なら `#<issue_id>`、`local-*` 形式なら bare ID（`#`
 | 15  | **重要判断の着手可能性**     | one-way door が人間未決、source of truth の指定・優先順位が矛盾、または AI が人間の判断を代行しなければ作業スコープや公開契約を確定できない                                             |
 
 観点 14 の分類基準は
-[`docs/dev/workflow_completion_criteria.md`](../../../docs/dev/workflow_completion_criteria.md)
+[`docs/dev/workflow-completion-criteria.md`](../../../docs/dev/workflow-completion-criteria.md)
 §
 workflow 内完了条件と事後確認の分離を正本とする。誤分類は本文編集で修正可能なため
 `RETRY` とし、`ABORT` にしない。

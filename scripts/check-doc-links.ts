@@ -2,7 +2,14 @@ import { existsSync, readFileSync } from "node:fs";
 import { readdir } from "node:fs/promises";
 import path from "node:path";
 
-const roots = ["README.md", "README.ja.md", "AGENTS.md", "CLAUDE.md", "docs"];
+const roots = [
+  "README.md",
+  "README.ja.md",
+  "AGENTS.md",
+  "CLAUDE.md",
+  "docs",
+  ".claude/skills",
+];
 const files: string[] = [];
 for (const root of roots) {
   if (!existsSync(root)) {
