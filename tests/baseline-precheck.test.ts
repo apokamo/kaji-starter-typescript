@@ -401,6 +401,41 @@ test(
 );
 
 test(
+  "validates a reusable artifact without touching the caller verdict",
+  { tags: ["medium"] },
+  () => {
+    const fixture = createBaselineFixture();
+    const measurement = spawnSync(
+      process.execPath,
+      [path.resolve("scripts/baseline-precheck.ts")],
+      {
+        cwd: process.cwd(),
+        encoding: "utf8",
+        env: fixture.environment,
+      },
+    );
+    expect(measurement.status, measurement.stderr).toBe(0);
+
+    const callerVerdict = "status: CALLER_OWNS_THIS_PATH\n";
+    writeFileSync(fixture.verdictPath, callerVerdict, "utf8");
+    const validation = spawnSync(
+      process.execPath,
+      [path.resolve("scripts/baseline-precheck.ts"), "--validate"],
+      {
+        cwd: process.cwd(),
+        encoding: "utf8",
+        env: fixture.environment,
+      },
+    );
+
+    expect(validation.status, validation.stderr).toBe(0);
+    expect(validation.stdout).toContain("Baseline artifact valid");
+    expect(validation.stdout).not.toContain("---VERDICT---");
+    expect(readFileSync(fixture.verdictPath, "utf8")).toBe(callerVerdict);
+  },
+);
+
+test(
   "persists an invalid artifact and ABORT verdict for a dirty guard failure",
   { tags: ["medium"] },
   () => {
