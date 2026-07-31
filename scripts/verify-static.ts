@@ -54,7 +54,7 @@ export function verifyPackagePolicy(
 }
 
 export function verifyActionReferences(workflow: string): void {
-  const referencePattern = /^\s*-\s+uses:\s*([^\s#]+)\s*$/gm;
+  const referencePattern = /^\s*-\s+uses:\s*([^\s#]+)(?:\s+#.*)?\s*$/gm;
   for (const match of workflow.matchAll(referencePattern)) {
     const reference = match[1];
     if (reference === undefined || reference.startsWith("./")) {

@@ -84,11 +84,16 @@ test.each(["engine-strict", "strict-peer-deps"])(
   },
 );
 
-test("rejects mutable GitHub Action references", { tags: ["medium"] }, () => {
-  expect(() =>
-    verifyActionReferences("steps:\n  - uses: actions/checkout@v4\n"),
-  ).toThrow(/full commit SHA/i);
-});
+test.each([
+  "steps:\n  - uses: actions/checkout@v4\n",
+  "steps:\n  - uses: actions/checkout@v4 # mutable reference\n",
+])(
+  "rejects mutable GitHub Action references with optional comments",
+  { tags: ["medium"] },
+  (workflow) => {
+    expect(() => verifyActionReferences(workflow)).toThrow(/full commit SHA/i);
+  },
+);
 
 test("rejects a modified tool archive checksum", { tags: ["medium"] }, () => {
   expect(() => verifyChecksum("0".repeat(64), "1".repeat(64))).toThrow(
