@@ -193,6 +193,7 @@ function measureBaseline(
   const diagnosticDirectory = path.join(worktree, ".kaji-artifacts/baseline");
   mkdirSync(diagnosticDirectory, { recursive: true });
   const reportPath = path.join(diagnosticDirectory, "vitest-report.json");
+  const reportArgument = path.relative(worktree, reportPath);
   rmSync(reportPath, { force: true });
   const command = [
     "exec",
@@ -202,7 +203,7 @@ function measureBaseline(
     "run",
     "--reporter=./scripts/test-tag-reporter.ts",
     "--reporter=json",
-    `--outputFile=${reportPath}`,
+    `--outputFile=${reportArgument}`,
   ];
   const testRun = spawnSync("npm", command, {
     cwd: worktree,
@@ -247,6 +248,7 @@ function measureBaseline(
       testResults: z
         .array(
           z.object({
+            name: z.string(),
             assertionResults: z
               .array(
                 z.object({
@@ -293,9 +295,18 @@ function measureBaseline(
         .filter((testCase) => testCase.status === "failed")
         .map((testCase) =>
           sanitizeFailure(
+            file.name,
             testCase.fullName,
             testCase.failureMessages?.[0] ?? "test failed",
             worktree,
+            Object.entries(process.env)
+              .filter(
+                ([name, value]) =>
+                  /(?:SECRET|TOKEN|PASSWORD|API[_-]?KEY|PRIVATE[_-]?KEY|CREDENTIAL)/i.test(
+                    name,
+                  ) && value !== undefined,
+              )
+              .map(([, value]) => value ?? ""),
           ),
         ),
     ),

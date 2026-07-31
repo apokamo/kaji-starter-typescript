@@ -6,6 +6,7 @@ import { expect, test } from "vitest";
 
 import {
   applyAgentConfiguration,
+  resolveAgentStep,
   transformWorkflowDocuments,
 } from "../scripts/set-agent.ts";
 
@@ -14,11 +15,41 @@ steps:
   - id: implement
     skill: issue-implement
     agent: claude
-    model: claude-sonnet-4-6
-    effort: high
+    model: opus
+    effort: max
+    on:
+      PASS: end
+  - id: close
+    skill: issue-close
+    agent: claude
+    model: sonnet
+    effort: medium
     on:
       PASS: end
 `;
+
+test.each([
+  ["claude", "implement", "high", "opus", "high"],
+  ["claude", "close", "medium", "sonnet", "medium"],
+  ["codex", "implement", "max", "gpt-5.6-sol", "xhigh"],
+  ["codex", "start", "low", "gpt-5.6-sol", "low"],
+] as const)(
+  "maps %s step %s to its model tier and valid effort",
+  { tags: ["small"] },
+  (target, stepId, effort, model, expectedEffort) => {
+    expect(resolveAgentStep(target, stepId, effort)).toEqual({
+      agent: target,
+      model,
+      effort: expectedEffort,
+    });
+  },
+);
+
+test("rejects an effort without a target fallback", { tags: ["small"] }, () => {
+  expect(() => resolveAgentStep("claude", "implement", "minimal")).toThrow(
+    /effort/i,
+  );
+});
 
 test(
   "transforms all workflows to Codex and is idempotent",
@@ -31,10 +62,13 @@ test(
     const twice = transformWorkflowDocuments(once, "codex");
     expect(once.get("dev.yaml")).toContain("agent: codex");
     expect(once.get("dev.yaml")).toContain("model: gpt-5.6-sol");
+    expect(once.get("dev.yaml")).toContain("effort: xhigh");
     expect(once.get("dev.yaml")).toBe(
       workflow
-        .replace("agent: claude", "agent: codex")
-        .replace("model: claude-sonnet-4-6", "model: gpt-5.6-sol"),
+        .replaceAll("agent: claude", "agent: codex")
+        .replace("model: opus", "model: gpt-5.6-sol")
+        .replace("model: sonnet", "model: gpt-5.6-sol")
+        .replace("effort: max", "effort: xhigh"),
     );
     expect(twice).toEqual(once);
   },

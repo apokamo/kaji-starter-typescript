@@ -35,8 +35,10 @@ export const BaselineArtifactSchema = z
     stopReason: z.string().nullable(),
     failures: z.array(
       z.object({
-        identity: z.string().min(1),
-        messageHead: z.string().min(1),
+        file: z.string().min(1),
+        full_name: z.string().min(1),
+        error_type: z.string().min(1),
+        message_head: z.string().min(1),
       }),
     ),
   })
@@ -133,14 +135,68 @@ export function evaluateBaselineGuards(input: BaselineGuardInput): void {
 }
 
 export function sanitizeFailure(
-  identity: string,
-  _message: string,
+  file: string,
+  fullName: string,
+  message: string,
   worktree: string,
-): { identity: string; messageHead: string } {
-  const relativeIdentity = identity.replace(`${path.resolve(worktree)}/`, "");
+  sensitiveValues: readonly string[] = [],
+): {
+  file: string;
+  full_name: string;
+  error_type: string;
+  message_head: string;
+} {
+  const resolvedWorktree = path.resolve(worktree);
+  const resolvedFile = path.isAbsolute(file)
+    ? path.resolve(file)
+    : path.resolve(resolvedWorktree, file);
+  const relativeFile = path.relative(resolvedWorktree, resolvedFile);
+  const safeFile =
+    relativeFile.startsWith("..") || path.isAbsolute(relativeFile)
+      ? `<outside-worktree>/${path.basename(resolvedFile)}`
+      : relativeFile.split(path.sep).join("/");
+  const rawMessageHead =
+    message.split(/\r?\n/).find((line) => line.trim() !== "") ??
+    "Error: test failed";
+  const stripAnsi = (value: string): string =>
+    value
+      .split(String.fromCharCode(27))
+      .map((part, index) =>
+        index === 0 ? part : part.replace(/^\[[0-9;]*m/, ""),
+      )
+      .join("");
+  const normalizedMessageHead = stripAnsi(rawMessageHead);
+  const errorType =
+    /^([A-Za-z_$][\w.$]*(?:Error|Exception)?)\s*:/.exec(
+      normalizedMessageHead,
+    )?.[1] ?? "Error";
+
+  const redact = (value: string): string => {
+    let redacted = stripAnsi(value)
+      .replaceAll(`file://${resolvedWorktree}`, "<worktree>")
+      .replaceAll(resolvedWorktree, "<worktree>");
+    for (const sensitiveValue of sensitiveValues) {
+      if (sensitiveValue.length >= 4) {
+        redacted = redacted.replaceAll(sensitiveValue, "<redacted>");
+      }
+    }
+    return redacted
+      .replace(
+        /\b(secret|token|password|api[_-]?key)\s*[:=]\s*[^\s,;]+/gi,
+        "$1=<redacted>",
+      )
+      .replace(
+        /(?:\/(?:home|Users|tmp)\/|[A-Za-z]:\\)[^\s)]+/g,
+        "<absolute-path>",
+      )
+      .slice(0, 300);
+  };
+
   return {
-    identity: relativeIdentity,
-    messageHead: "Error: invalid input",
+    file: safeFile,
+    full_name: redact(fullName),
+    error_type: errorType,
+    message_head: redact(rawMessageHead),
   };
 }
 
