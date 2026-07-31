@@ -226,18 +226,26 @@ test(
   () => {
     expect(
       sanitizeFailure(
-        "/home/example/project/tests/config.test.ts > rejects secret",
-        "Error: invalid secret-value\n    at /home/example/project/src/config.ts:1",
+        "/home/example/project/tests/config.test.ts",
+        "rejects secret",
+        "AssertionError: token=secret-value at /home/example/project/src/config.ts:1\n    stack",
         "/home/example/project",
+        ["secret-value"],
       ),
     ).toEqual({
-      identity: "tests/config.test.ts > rejects secret",
-      messageHead: "Error: invalid input",
+      file: "tests/config.test.ts",
+      full_name: "rejects secret",
+      error_type: "AssertionError",
+      message_head:
+        "AssertionError: token=<redacted> at <worktree>/src/config.ts:1",
     });
   },
 );
 
-function createBaselineFixture(): {
+function createBaselineFixture(options?: {
+  report?: (worktree: string) => unknown;
+  runExitCode?: number;
+}): {
   environment: NodeJS.ProcessEnv;
   verdictPath: string;
   worktree: string;
@@ -271,6 +279,17 @@ exit 2
   );
   chmodSync(kaji, 0o755);
   const npm = path.join(commandDirectory, "npm");
+  const report = JSON.stringify(
+    options?.report?.(worktree) ?? {
+      success: true,
+      numTotalTests: 2,
+      numPassedTests: 2,
+      numFailedTests: 0,
+      numPendingTests: 0,
+      numTodoTests: 0,
+      testResults: [],
+    },
+  );
   writeFileSync(
     npm,
     `#!/usr/bin/env bash
@@ -284,10 +303,11 @@ for argument in "$@"; do
     --outputFile=*)
       report="\${argument#--outputFile=}"
       mkdir -p "$(dirname "$report")"
-      printf '%s\\n' '{"success":true,"numTotalTests":2,"numPassedTests":2,"numFailedTests":0,"numPendingTests":0,"numTodoTests":0,"testResults":[]}' >"$report"
+      printf '%s\\n' '${report}' >"$report"
       ;;
   esac
 done
+exit ${options?.runExitCode ?? 0}
 `,
     "utf8",
   );
@@ -397,6 +417,68 @@ test(
         "utf8",
       ).split("\n"),
     ).toContain("--commit");
+  },
+);
+
+test(
+  "persists project-relative sanitized Vitest failure evidence",
+  { tags: ["medium"] },
+  () => {
+    const fixture = createBaselineFixture({
+      runExitCode: 1,
+      report: (worktree) => ({
+        success: false,
+        numTotalTests: 1,
+        numPassedTests: 0,
+        numFailedTests: 1,
+        numPendingTests: 0,
+        numTodoTests: 0,
+        testResults: [
+          {
+            name: path.join(worktree, "tests/config.test.ts"),
+            assertionResults: [
+              {
+                fullName: "configuration rejects secret",
+                status: "failed",
+                failureMessages: [
+                  `AssertionError: token=baseline-secret at ${worktree}/src/config.ts:1`,
+                ],
+              },
+            ],
+          },
+        ],
+      }),
+    });
+    fixture.environment.BASELINE_TEST_SECRET = "baseline-secret";
+    const result = spawnSync(
+      process.execPath,
+      [path.resolve("scripts/baseline-precheck.ts")],
+      {
+        cwd: process.cwd(),
+        encoding: "utf8",
+        env: fixture.environment,
+      },
+    );
+
+    expect(result.status, result.stderr).toBe(0);
+    const artifactText = readFileSync(
+      path.join(fixture.worktree, ".kaji-artifacts/baseline/baseline.json"),
+      "utf8",
+    );
+    expect(artifactText).not.toContain(fixture.worktree);
+    expect(artifactText).not.toContain("baseline-secret");
+    expect(JSON.parse(artifactText)).toMatchObject({
+      status: "blocked",
+      failures: [
+        {
+          file: "tests/config.test.ts",
+          full_name: "configuration rejects secret",
+          error_type: "AssertionError",
+          message_head:
+            "AssertionError: token=<redacted> at <worktree>/src/config.ts:1",
+        },
+      ],
+    });
   },
 );
 

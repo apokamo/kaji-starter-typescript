@@ -7,17 +7,88 @@ import { isMap, isSeq, parseDocument } from "yaml";
 
 type AgentTarget = "claude" | "codex";
 
-const TARGETS = {
-  claude: { agent: "claude", model: "claude-sonnet-4-6" },
-  codex: { agent: "codex", model: "gpt-5.6-sol" },
+const MODEL_MAP = {
+  claude: { heavy: "opus", light: "sonnet" },
+  codex: { heavy: "gpt-5.6-sol", light: "gpt-5.6-sol" },
 } as const;
 
+const EFFORT_ALLOWED: Readonly<Record<AgentTarget, ReadonlySet<string>>> = {
+  claude: new Set(["low", "medium", "high", "xhigh", "max"]),
+  codex: new Set(["none", "minimal", "low", "medium", "high", "xhigh"]),
+};
+
+const EFFORT_FALLBACK: Readonly<
+  Record<AgentTarget, Readonly<Record<string, string>>>
+> = {
+  claude: {},
+  codex: { max: "xhigh" },
+};
+
+const LIGHT_STEPS = new Set(["start", "pr", "close"]);
+
 function assertTarget(target: string): asserts target is AgentTarget {
-  if (!(target in TARGETS)) {
+  if (!(target in MODEL_MAP)) {
     throw new Error(
       `Unsupported agent target: ${target}. Expected claude or codex.`,
     );
   }
+}
+
+export function resolveAgentStep(
+  target: string,
+  stepId: string,
+  effort: string | undefined,
+): { agent: AgentTarget; effort?: string; model: string } {
+  assertTarget(target);
+  const tier = LIGHT_STEPS.has(stepId) ? "light" : "heavy";
+  const model = MODEL_MAP[target][tier];
+  if (effort === undefined) {
+    return { agent: target, model };
+  }
+  if (EFFORT_ALLOWED[target].has(effort)) {
+    return { agent: target, model, effort };
+  }
+  const fallback = EFFORT_FALLBACK[target][effort];
+  if (fallback === undefined) {
+    throw new Error(`Effort ${effort} is not supported by ${target}`);
+  }
+  return { agent: target, model, effort: fallback };
+}
+
+function transformWorkflowSource(source: string, target: AgentTarget): string {
+  let currentStepId: string | undefined;
+  return source
+    .split(/(?<=\n)/)
+    .map((line) => {
+      const stepMatch = /^ {2}- id:\s*([^\s#]+)\s*$/.exec(line.trimEnd());
+      if (stepMatch?.[1] !== undefined) {
+        currentStepId = stepMatch[1];
+        return line;
+      }
+      if (currentStepId === undefined) {
+        return line;
+      }
+      const agentMatch = /^(\s+agent:\s*).*?(\r?\n)?$/.exec(line);
+      if (agentMatch?.[1] !== undefined) {
+        return `${agentMatch[1]}${target}${agentMatch[2] ?? ""}`;
+      }
+      const modelMatch = /^(\s+model:\s*).*?(\r?\n)?$/.exec(line);
+      if (modelMatch?.[1] !== undefined) {
+        const resolved = resolveAgentStep(target, currentStepId, undefined);
+        return `${modelMatch[1]}${resolved.model}${modelMatch[2] ?? ""}`;
+      }
+      const effortMatch = /^(\s+effort:\s*)([^\s#]+)[ \t]*(\r?\n)?$/.exec(line);
+      if (effortMatch?.[1] !== undefined && effortMatch[2] !== undefined) {
+        const resolved = resolveAgentStep(
+          target,
+          currentStepId,
+          effortMatch[2],
+        );
+        return `${effortMatch[1]}${resolved.effort}${effortMatch[3] ?? ""}`;
+      }
+      return line;
+    })
+    .join("");
 }
 
 export function transformWorkflowDocuments(
@@ -54,12 +125,7 @@ export function transformWorkflowDocuments(
         `Invalid workflow ${filename}: every skill step must have one agent and model field`,
       );
     }
-    transformed.set(
-      filename,
-      source
-        .replace(/^(\s+agent:\s*).*$/gm, `$1${TARGETS[target].agent}`)
-        .replace(/^(\s+model:\s*).*$/gm, `$1${TARGETS[target].model}`),
-    );
+    transformed.set(filename, transformWorkflowSource(source, target));
   }
   return transformed;
 }

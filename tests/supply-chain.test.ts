@@ -87,6 +87,8 @@ test.each(["engine-strict", "strict-peer-deps"])(
 test.each([
   "steps:\n  - uses: actions/checkout@v4\n",
   "steps:\n  - uses: actions/checkout@v4 # mutable reference\n",
+  "steps:\n  - name: Checkout\n    uses: actions/checkout@v4\n",
+  "steps:\n  - name: Checkout\n    uses: actions/checkout@v4 # mutable reference\n",
 ])(
   "rejects mutable GitHub Action references with optional comments",
   { tags: ["medium"] },
