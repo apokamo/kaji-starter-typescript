@@ -9,3 +9,6 @@ implementation.
 
 Later skills call `node scripts/baseline-precheck.ts --validate` and require the
 clean artifact's issue/branch to match and measured commit to be an ancestor.
+Validation mode is read-only: it does not post baseline evidence or write the
+calling step's `KAJI_VERDICT_PATH`. The calling skill owns its verdict and saves
+it only after that step's required external side effects are complete.

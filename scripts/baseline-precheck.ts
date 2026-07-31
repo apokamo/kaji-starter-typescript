@@ -118,12 +118,9 @@ function validateArtifact(
     branch: environment.KAJI_BRANCH_NAME,
     ancestors: new Set(ancestor.status === 0 ? [artifact.measuredCommit] : []),
   });
-  const yaml = verdictYaml(
-    "PASS",
-    "Clean TypeScript baseline artifact is valid",
-    `measured_commit=${artifact.measuredCommit}; tests=${artifact.summary.total}`,
+  process.stdout.write(
+    `Baseline artifact valid: measured_commit=${artifact.measuredCommit}; tests=${artifact.summary.total}\n`,
   );
-  writeVerdict(environment.KAJI_VERDICT_PATH, yaml);
 }
 
 function measureBaseline(
