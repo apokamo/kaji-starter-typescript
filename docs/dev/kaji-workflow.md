@@ -19,8 +19,8 @@ may add it and must re-run `make validate-workflows`.
 
 The five custom workflows were derived from the managed Python starter at commit
 `dd80139b7dff3df190c0dabf8279fc6c59b881b4`. Release synchronization compares
-them with kaji `v0.18.0`, resolved as
-`3245248bc5fb18d358d7b0922362c3483876947d`.
+them with kaji `v0.20.1`, resolved as
+`9f85c86f9ae776956f7f4f65e7488d90034fbb98`.
 
 The intentional TypeScript differences are:
 
@@ -36,3 +36,11 @@ The intentional TypeScript differences are:
 During a managed-starter update, record whether each upstream workflow change is
 ported into these files, absorbed by the pinned kaji release, or intentionally
 not applicable.
+
+## v0.20.1 synchronization record
+
+| Classification | v0.20.1 change                                                                            | Starter decision                                                                                                          |
+| -------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Ported         | The project-local kaji dependency                                                         | Pin `tools/kaji` to `v0.20.1` and refresh its lockfile.                                                                   |
+| Absorbed       | Herdr interactive-terminal support and recovery behavior in the kaji harness              | The pinned CLI supplies these capabilities; no starter-owned code is copied.                                              |
+| Not applicable | Upstream's `dev-thorough-codex`, `docs-fable`, and repository-specific Herdr skill wiring | This starter owns its custom workflows and keeps the headless default; it does not vendor upstream workflow/model policy. |

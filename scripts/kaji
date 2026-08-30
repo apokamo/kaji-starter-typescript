@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 if [[ "$#" -eq 1 && "$1" == "validate" ]]; then
-  shopt -s globstar nullglob
-  workflows=(.kaji/wf/custom/**/*.yaml)
+  workflows=()
+  while IFS= read -r workflow; do
+    workflows+=("$workflow")
+  done < <(find .kaji/wf/custom -type f -name '*.yaml' -print | sort)
   exec uv run --project tools/kaji --locked --offline kaji validate "${workflows[@]}"
 fi
 if [[ "$#" -ge 1 && "$1" == "series-generate" ]]; then

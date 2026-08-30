@@ -2,6 +2,7 @@ import { execFileSync, spawnSync } from "node:child_process";
 import {
   existsSync,
   mkdirSync,
+  realpathSync,
   readFileSync,
   renameSync,
   rmSync,
@@ -139,8 +140,8 @@ function measureBaseline(
       .filter((filename) => filename !== "")
       .filter((filename) => !filename.startsWith("draft/design/"));
     evaluateBaselineGuards({
-      worktree: environment.KAJI_WORKTREE_DIR,
-      gitTopLevel: git(worktree, "rev-parse", "--show-toplevel"),
+      worktree: realpathSync(worktree),
+      gitTopLevel: realpathSync(git(worktree, "rev-parse", "--show-toplevel")),
       branch: git(worktree, "branch", "--show-current"),
       expectedBranch: environment.KAJI_BRANCH_NAME,
       status: git(worktree, "status", "--porcelain"),
@@ -328,7 +329,10 @@ if (!path.isAbsolute(environment.KAJI_WORKTREE_DIR)) {
   throw new Error("KAJI_WORKTREE_DIR must be an absolute path");
 }
 const worktree = path.resolve(environment.KAJI_WORKTREE_DIR);
-if (git(worktree, "rev-parse", "--show-toplevel") !== worktree) {
+if (
+  realpathSync(git(worktree, "rev-parse", "--show-toplevel")) !==
+  realpathSync(worktree)
+) {
   throw new Error("KAJI_WORKTREE_DIR does not match git top-level");
 }
 if (
