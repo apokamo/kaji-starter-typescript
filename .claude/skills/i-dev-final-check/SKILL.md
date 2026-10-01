@@ -130,7 +130,8 @@ Verdict 出力 § workflow YAML 互換ルール）。
 
 この starter は TypeScript application と project-local
 kaji を分離する。clean-only baseline artifact を
-`node scripts/baseline-precheck.ts --validate` で検証後、以下を実行する。
+`node scripts/baseline-precheck.ts --worktree [worktree_dir] --issue [issue_id] --validate`
+で検証後、以下を実行する。
 
 ```bash
 cd [worktree_dir] && make check

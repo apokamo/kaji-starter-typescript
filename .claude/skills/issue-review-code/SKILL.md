@@ -128,8 +128,8 @@ PHR_ROUTE_COUNT=$(./scripts/kaji issue view [issue_id] --comments 2>/dev/null | 
 
 1. **Baseline artifact の確認**:
    [docs/dev/baseline-check.md](../../../docs/dev/baseline-check.md) に従い、
-   `node scripts/baseline-precheck.ts --validate` で固定 path の artifact
-   schema と `measured_commit`
+   `node scripts/baseline-precheck.ts --worktree [worktree_dir] --issue [issue_id] --validate`
+   で固定 path の artifact schema と `measured_commit`
    の ancestor 関係を確認する。コメントは参照しない。
 
 2. **独立品質ゲート（exit 0 必須）**:

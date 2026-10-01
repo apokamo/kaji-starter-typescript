@@ -95,7 +95,7 @@ function postBaselineComment(
 }
 
 function validateArtifact(
-  environment: z.infer<typeof environmentSchema>,
+  identity: { issueId: string; branch: string },
   worktree: string,
   artifactPath: string,
 ): void {
@@ -115,8 +115,8 @@ function validateArtifact(
     { cwd: worktree },
   );
   validateReusableArtifact(artifact, {
-    issueId: environment.KAJI_ISSUE_ID,
-    branch: environment.KAJI_BRANCH_NAME,
+    issueId: identity.issueId,
+    branch: identity.branch,
     ancestors: new Set(ancestor.status === 0 ? [artifact.measuredCommit] : []),
   });
   process.stdout.write(
@@ -324,28 +324,60 @@ function measureBaseline(
   writeVerdict(environment.KAJI_VERDICT_PATH, yaml);
 }
 
-const environment = environmentSchema.parse(process.env);
-if (!path.isAbsolute(environment.KAJI_WORKTREE_DIR)) {
-  throw new Error("KAJI_WORKTREE_DIR must be an absolute path");
+function optionValue(name: string): string | undefined {
+  const index = process.argv.indexOf(name);
+  if (index === -1) {
+    return undefined;
+  }
+  const value = process.argv[index + 1];
+  if (value === undefined || value.startsWith("--")) {
+    throw new Error(`${name} requires a value`);
+  }
+  return value;
 }
-const worktree = path.resolve(environment.KAJI_WORKTREE_DIR);
-if (
-  realpathSync(git(worktree, "rev-parse", "--show-toplevel")) !==
-  realpathSync(worktree)
-) {
-  throw new Error("KAJI_WORKTREE_DIR does not match git top-level");
+
+function resolveWorktree(rawWorktree: string | undefined): string {
+  if (rawWorktree === undefined || rawWorktree === "") {
+    throw new Error("KAJI_WORKTREE_DIR or --worktree is required");
+  }
+  if (!path.isAbsolute(rawWorktree)) {
+    throw new Error("worktree must be an absolute path");
+  }
+  const worktree = path.resolve(rawWorktree);
+  if (
+    realpathSync(git(worktree, "rev-parse", "--show-toplevel")) !==
+    realpathSync(worktree)
+  ) {
+    throw new Error("worktree does not match git top-level");
+  }
+  return worktree;
 }
-if (
-  git(worktree, "branch", "--show-current") !== environment.KAJI_BRANCH_NAME
-) {
-  throw new Error("KAJI_BRANCH_NAME does not match the worktree branch");
+
+function artifactPathFor(worktree: string): string {
+  return path.join(worktree, ".kaji-artifacts/baseline/baseline.json");
 }
-const artifactPath = path.join(
-  worktree,
-  ".kaji-artifacts/baseline/baseline.json",
-);
+
+// Validation runs from agent steps, which do not receive the KAJI_* context
+// variables (only exec steps do), so it takes --worktree / --issue instead of
+// requiring the full runner environment.
 if (process.argv.includes("--validate")) {
-  validateArtifact(environment, worktree, artifactPath);
+  const worktree = resolveWorktree(
+    optionValue("--worktree") ?? process.env.KAJI_WORKTREE_DIR,
+  );
+  const issueId = optionValue("--issue") ?? process.env.KAJI_ISSUE_ID;
+  if (issueId === undefined || issueId === "") {
+    throw new Error("KAJI_ISSUE_ID or --issue is required");
+  }
+  const branch =
+    process.env.KAJI_BRANCH_NAME ?? git(worktree, "branch", "--show-current");
+  validateArtifact({ issueId, branch }, worktree, artifactPathFor(worktree));
 } else {
-  measureBaseline(environment, worktree, artifactPath);
+  const environment = environmentSchema.parse(process.env);
+  const worktree = resolveWorktree(environment.KAJI_WORKTREE_DIR);
+  if (
+    git(worktree, "branch", "--show-current") !== environment.KAJI_BRANCH_NAME
+  ) {
+    throw new Error("KAJI_BRANCH_NAME does not match the worktree branch");
+  }
+  measureBaseline(environment, worktree, artifactPathFor(worktree));
 }

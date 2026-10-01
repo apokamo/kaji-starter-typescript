@@ -88,8 +88,8 @@ BACK 等で再入し、設計書が前回 Read 後に変わっている場合は
 `[worktree_dir]/.kaji-artifacts/baseline/baseline.json`
 を確認する。コメントを正本として検索しない。
 
-- `node scripts/baseline-precheck.ts --validate` で schema、Issue、branch、
-  `measured_commit` の ancestor 関係を検証する
+- `node scripts/baseline-precheck.ts --worktree [worktree_dir] --issue [issue_id] --validate`
+  で schema、Issue、branch、 `measured_commit` の ancestor 関係を検証する
 - artifact 不在・検証失敗・`clean` 以外は停止し、baseline
   step の再実行を案内する
 - TypeScript baseline は clean-only であり、既知失敗の許容や比較 mode を持たない
@@ -164,7 +164,8 @@ net 契約を維持する。
 AGENTS.md の pre-commit 契約を通し、出力を Step 8.5（Pre-Handoff
 Review の入力）と Step 9（証跡）の両方で使えるよう保持する。
 
-clean baseline artifact を `node scripts/baseline-precheck.ts --validate`
+clean baseline artifact を
+`node scripts/baseline-precheck.ts --worktree [worktree_dir] --issue [issue_id] --validate`
 で確認してから `make check` を実行し、両方の exit
 0 と全出力を記録する。`make check`
 が要求する Vitest、ESLint、Prettier、TypeScript、build、workflow、static

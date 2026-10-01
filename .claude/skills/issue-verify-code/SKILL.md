@@ -98,7 +98,7 @@ $ARGUMENTS = <issue_id>
 3. **Baseline artifact の確認**:
    [docs/dev/baseline-check.md](../../../docs/dev/baseline-check.md)
    に従い固定 path の clean artifact を確認する。
-   `node scripts/baseline-precheck.ts --validate`
+   `node scripts/baseline-precheck.ts --worktree [worktree_dir] --issue [issue_id] --validate`
    を使い、schema、Issue、branch、ancestor の一致を必須とする。既知失敗の許容や比較 mode はない。Issue コメントは正本として検索しない。
 
 4. **修正差分を確認**:

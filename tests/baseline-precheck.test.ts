@@ -518,6 +518,67 @@ test(
 );
 
 test(
+  "validates a reusable artifact from --worktree and --issue without KAJI_* context",
+  { tags: ["medium"] },
+  () => {
+    const fixture = createBaselineFixture();
+    const measurement = spawnSync(
+      process.execPath,
+      [path.resolve("scripts/baseline-precheck.ts")],
+      {
+        cwd: process.cwd(),
+        encoding: "utf8",
+        env: fixture.environment,
+      },
+    );
+    expect(measurement.status, measurement.stderr).toBe(0);
+
+    // Agent steps do not receive the KAJI_* context variables.
+    const agentEnvironment = Object.fromEntries(
+      Object.entries(fixture.environment).filter(
+        ([name]) => !name.startsWith("KAJI_"),
+      ),
+    );
+    const validation = spawnSync(
+      process.execPath,
+      [
+        path.resolve("scripts/baseline-precheck.ts"),
+        "--worktree",
+        fixture.worktree,
+        "--issue",
+        "391",
+        "--validate",
+      ],
+      {
+        cwd: process.cwd(),
+        encoding: "utf8",
+        env: agentEnvironment,
+      },
+    );
+    expect(validation.status, validation.stderr).toBe(0);
+    expect(validation.stdout).toContain("Baseline artifact valid");
+
+    const wrongIssue = spawnSync(
+      process.execPath,
+      [
+        path.resolve("scripts/baseline-precheck.ts"),
+        "--worktree",
+        fixture.worktree,
+        "--issue",
+        "999",
+        "--validate",
+      ],
+      {
+        cwd: process.cwd(),
+        encoding: "utf8",
+        env: agentEnvironment,
+      },
+    );
+    expect(wrongIssue.status).not.toBe(0);
+  },
+);
+
+test(
   "persists an invalid artifact and ABORT verdict for a dirty guard failure",
   { tags: ["medium"] },
   () => {

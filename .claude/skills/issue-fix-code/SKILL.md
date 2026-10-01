@@ -114,7 +114,7 @@ $ARGUMENTS = <issue_id>
    baseline は clean-only であり、既知失敗の許容や比較 mode はない。
 
    ```bash
-   cd [worktree_dir] && node scripts/baseline-precheck.ts --validate
+   cd [worktree_dir] && node scripts/baseline-precheck.ts --worktree [worktree_dir] --issue [issue_id] --validate
    cd [worktree_dir] && make check
    ```
 
