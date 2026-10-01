@@ -368,8 +368,11 @@ if (process.argv.includes("--validate")) {
   if (issueId === undefined || issueId === "") {
     throw new Error("KAJI_ISSUE_ID or --issue is required");
   }
-  const branch =
-    process.env.KAJI_BRANCH_NAME ?? git(worktree, "branch", "--show-current");
+  const branch = git(worktree, "branch", "--show-current");
+  const expectedBranch = process.env.KAJI_BRANCH_NAME;
+  if (expectedBranch !== undefined && expectedBranch !== branch) {
+    throw new Error("KAJI_BRANCH_NAME does not match the worktree branch");
+  }
   validateArtifact({ issueId, branch }, worktree, artifactPathFor(worktree));
 } else {
   const environment = environmentSchema.parse(process.env);

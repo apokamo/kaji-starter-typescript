@@ -579,6 +579,53 @@ test(
 );
 
 test(
+  "rejects validation when the checkout branch differs from the environment and artifact",
+  { tags: ["medium"] },
+  () => {
+    const fixture = createBaselineFixture();
+    const measurement = spawnSync(
+      process.execPath,
+      [path.resolve("scripts/baseline-precheck.ts")],
+      {
+        cwd: process.cwd(),
+        encoding: "utf8",
+        env: fixture.environment,
+      },
+    );
+    expect(measurement.status, measurement.stderr).toBe(0);
+
+    // The environment and artifact still say feat/391, but the checkout moved.
+    execFileSync("git", ["switch", "-c", "feat/other"], {
+      cwd: fixture.worktree,
+    });
+    const arguments_ = [
+      path.resolve("scripts/baseline-precheck.ts"),
+      "--worktree",
+      fixture.worktree,
+      "--issue",
+      "391",
+      "--validate",
+    ];
+    for (const environment of [
+      fixture.environment,
+      Object.fromEntries(
+        Object.entries(fixture.environment).filter(
+          ([name]) => !name.startsWith("KAJI_"),
+        ),
+      ),
+    ]) {
+      const validation = spawnSync(process.execPath, arguments_, {
+        cwd: process.cwd(),
+        encoding: "utf8",
+        env: environment,
+      });
+      expect(validation.status).not.toBe(0);
+      expect(validation.stdout).not.toContain("Baseline artifact valid");
+    }
+  },
+);
+
+test(
   "persists an invalid artifact and ABORT verdict for a dirty guard failure",
   { tags: ["medium"] },
   () => {
