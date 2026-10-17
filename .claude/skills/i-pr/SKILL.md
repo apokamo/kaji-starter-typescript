@@ -11,12 +11,11 @@ workflow 共通の PR 作成スキル。workflow 固有の完了判定は持た�
 
 ## いつ使うか
 
-| タイミング                    | このスキルを使用                                         |
-| ----------------------------- | -------------------------------------------------------- |
-| `i-dev-final-check` 完了後    | ✅ 必須                                                  |
-| `i-doc-final-check` 完了後    | ✅ 必須                                                  |
-| `provider.type='github'` 配下 | ✅ 受理（gh CLI 経由）                                   |
-| `provider.type='local'` 配下  | ❌ Step 0 で ABORT。代替は `/issue-close`（local merge） |
+| タイミング                    | このスキルを使用       |
+| ----------------------------- | ---------------------- |
+| `i-dev-final-check` 完了後    | ✅ 必須                |
+| `i-doc-final-check` 完了後    | ✅ 必須                |
+| `provider.type='github'` 配下 | ✅ 受理（gh CLI 経由） |
 
 ## このスキルがやらないこと
 
@@ -34,10 +33,10 @@ workflow 共通の PR 作成スキル。workflow 固有の完了判定は持た�
 
 | 変数            | 型  | 説明                                                                                                                                          |
 | --------------- | --- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `issue_id`      | str | 正規化済み Issue ID（GitHub 数値または local ID）                                                                                             |
-| `issue_ref`     | str | 人間可読の Issue 参照（GitHub では `#<issue_id>`、local では bare ID）                                                                        |
+| `issue_id`      | str | 正規化済み Issue ID（GitHub 数値）                                                                                                            |
+| `issue_ref`     | str | 人間可読の Issue 参照（GitHub では `#<issue_id>`）                                                                                            |
 | `step_id`       | str | 現在のステップ ID                                                                                                                             |
-| `provider_type` | str | `github` / `local` のいずれか。Step 0 のガード判定に使用                                                                                      |
+| `provider_type` | str | `github`（現行唯一の provider）。Step 0 のガード判定に使用                                                                                    |
 | `git_remote`    | str | git remote 名（`provider.<type>.git_remote` config から解決。未指定時のフォールバックは kaji 側の既定値）。Step 4 の `git push -u` 引数に使用 |
 
 ### 手動実行（スラッシュコマンド）
@@ -53,8 +52,7 @@ $ARGUMENTS = <issue_id>
 
 `issue_ref`
 はハーネス経由ではプロンプトに自動注入される（provider 別に整形済み）。手動実行時は
-`issue_id` から導出する: GitHub 数値 ID なら `#<issue_id>`、`local-*`
-形式なら bare ID（`#` を付けない）。
+`issue_id` から `#<issue_id>` を導出する。
 
 `pr_id` / `pr_ref` / `pr_url` は本 Skill の Step 4 で `./scripts/kaji pr create`
 の出力から確定する。プロンプトへの自動注入は現時点では行わない。
@@ -97,21 +95,6 @@ $ARGUMENTS = <issue_id>
 2. **判定と verdict 出力**:
 
    - `PROVIDER_TYPE` が `github` → Step 1 に進む
-   - `PROVIDER_TYPE` が `local` → 以下の ABORT verdict を
-     **そのまま stdout に出力**して以降のステップは実行しない:
-
-     ```text
-     ---VERDICT---
-     status: ABORT
-     reason: |
-       i-pr is forge-only and cannot run under provider.type='local'.
-     evidence: |
-       Pull request concept does not exist in local mode (bare provider).
-     suggestion: |
-       Use /issue-close for local merge instead.
-     ---END_VERDICT---
-     ```
-
    - `PROVIDER_TYPE` がそれ以外（空文字 / 不明値）→ 以下の ABORT
      verdict を出力して終了:
 
@@ -131,10 +114,6 @@ $ARGUMENTS = <issue_id>
 > **重要**: ABORT verdict は **shell の `exit`
 > に任せず agent 自身が stdout に出力する**こと。workflow
 > runner はその verdict を読み取って `on: ABORT: end` で workflow を終わらせる。
->
-> **補足**: workflow 経由で起動された場合は、`./scripts/kaji run` の
-> `requires_provider` 検証で先に止まるはずだが、user が `provider=local` 配下で
-> `/i-pr` を直接呼ぶケースに備えて Skill 層でも止める（3 層ガードの冗長性）。
 
 ### Step 1: Worktree 情報の取得
 

@@ -26,13 +26,13 @@ final-check → pr
 
 ### ハーネス経由（コンテキスト変数）
 
-| 変数             | 型  | 説明                                                                   |
-| ---------------- | --- | ---------------------------------------------------------------------- |
-| `issue_id`       | str | 正規化済み Issue ID（GitHub 数値または local ID）                      |
-| `issue_ref`      | str | 人間可読の Issue 参照（GitHub では `#<issue_id>`、local では bare ID） |
-| `step_id`        | str | 現在のステップ ID                                                      |
-| `cycle_count`    | int | 現在のイテレーション                                                   |
-| `max_iterations` | int | サイクルの上限回数                                                     |
+| 変数             | 型  | 説明                                               |
+| ---------------- | --- | -------------------------------------------------- |
+| `issue_id`       | str | 正規化済み Issue ID（GitHub 数値）                 |
+| `issue_ref`      | str | 人間可読の Issue 参照（GitHub では `#<issue_id>`） |
+| `step_id`        | str | 現在のステップ ID                                  |
+| `cycle_count`    | int | 現在のイテレーション                               |
+| `max_iterations` | int | サイクルの上限回数                                 |
 
 ### 手動実行（スラッシュコマンド）
 
@@ -47,8 +47,7 @@ $ARGUMENTS = <issue_id>
 
 `issue_ref`
 はハーネス経由ではプロンプトに自動注入される（harness 側で provider 別に整形される）。手動実行時は
-`issue_id` から導出する: GitHub 数値 ID なら `#<issue_id>`、`local-*`
-形式なら bare ID（`#` を付けない）。
+`issue_id` から `#<issue_id>` を導出する。
 
 ## 前提知識の読み込み
 

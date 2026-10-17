@@ -10,12 +10,11 @@ PR 上のコードレビューコメントに基づき、修正対応を行う�
 
 ## いつ使うか
 
-| タイミング                                              | このスキルを使用                                   |
-| ------------------------------------------------------- | -------------------------------------------------- |
-| PR にレビューコメント（Changes Requested 等）が付いた後 | ✅ 必須                                            |
-| PR 作成前（Issue ワークフロー内のレビュー）             | ❌ `/issue-fix-code` を使用                        |
-| `provider.type='github'` 配下                           | ✅ 受理（gh CLI 経由）                             |
-| `provider.type='local'` 配下                            | ❌ Step 0 で ABORT。代替は `/issue-review-code` 等 |
+| タイミング                                              | このスキルを使用            |
+| ------------------------------------------------------- | --------------------------- |
+| PR にレビューコメント（Changes Requested 等）が付いた後 | ✅ 必須                     |
+| PR 作成前（Issue ワークフロー内のレビュー）             | ❌ `/issue-fix-code` を使用 |
+| `provider.type='github'` 配下                           | ✅ 受理（gh CLI 経由）      |
 
 **ワークフロー内の位置**: i-pr → [PR review] → (**pr-fix** → pr-verify) → close
 
@@ -31,9 +30,9 @@ $ARGUMENTS = <issue_id>
 
 | 変数            | 型  | 説明                                                                                                                                       |
 | --------------- | --- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `issue_id`      | str | 正規化済み Issue ID（GitHub 数値、または `local-*`）                                                                                       |
-| `issue_ref`     | str | 人間可読の Issue 参照（GitHub では `#<issue_id>`、local では bare ID）                                                                     |
-| `provider_type` | str | `github` / `local` のいずれか。Step 0 のガード判定に使用                                                                                   |
+| `issue_id`      | str | 正規化済み Issue ID（GitHub 数値）                                                                                                         |
+| `issue_ref`     | str | 人間可読の Issue 参照（GitHub では `#<issue_id>`）                                                                                         |
+| `provider_type` | str | `github`（現行唯一の provider）。Step 0 のガード判定に使用                                                                                 |
 | `git_remote`    | str | git remote 名（`provider.<type>.git_remote` config から解決。未指定時のフォールバックは kaji 側の既定値）。Step 4 の `git push` 引数に使用 |
 
 ### 解決ルール
@@ -43,8 +42,7 @@ $ARGUMENTS = <issue_id>
 
 `issue_ref`
 はハーネス経由ではプロンプトに自動注入される（provider 別に整形済み）。手動実行時は
-`issue_id` から導出する: GitHub 数値 ID なら `#<issue_id>`、`local-*`
-形式なら bare ID（`#` を付けない）。
+`issue_id` から `#<issue_id>` を導出する。
 
 `pr_id` / `pr_ref`
 はハーネス経由ではプロンプトに自動注入される（harness がブランチから PR を逆引きして展開する）。手動実行時、および auto-resolve が失敗した（branch 未 push
@@ -86,21 +84,6 @@ $ARGUMENTS = <issue_id>
 2. **判定と verdict 出力**:
 
    - `PROVIDER_TYPE` が `github` → Step 1 に進む
-   - `PROVIDER_TYPE` が `local` → 以下の ABORT verdict を
-     **そのまま stdout に出力**して以降のステップは実行しない:
-
-     ```text
-     ---VERDICT---
-     status: ABORT
-     reason: |
-       pr-fix is forge-only and cannot run under provider.type='local'.
-     evidence: |
-       Pull request concept does not exist in local mode (bare provider).
-     suggestion: |
-       Use /issue-review-code, /issue-fix-code, /issue-verify-code instead.
-     ---END_VERDICT---
-     ```
-
    - `PROVIDER_TYPE` がそれ以外（空文字 / 不明値）→ 以下の ABORT
      verdict を出力して終了:
 

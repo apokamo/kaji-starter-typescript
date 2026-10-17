@@ -28,8 +28,8 @@ wheels = [
 
 [[package]]
 name = "kaji"
-version = "0.21.0"
-source = { git = "https://github.com/apokamo/kaji.git?tag=v0.21.0#a03c53bb35784c391bed612d61847091b7fe1b6d" }
+version = "0.23.0"
+source = { git = "https://github.com/apokamo/kaji.git?tag=v0.23.0#a52bb3d4dd74d21bb6ebbc4d77d40c57da3b25e0" }
 dependencies = [
     { name = "jq" },
     { name = "pydantic" },
@@ -104,7 +104,7 @@ dependencies = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "kaji", git = "https://github.com/apokamo/kaji.git?tag=v0.21.0" }]
+requires-dist = [{ name = "kaji", git = "https://github.com/apokamo/kaji.git?tag=v0.23.0" }]
 
 [[package]]
 name = "typing-extensions"

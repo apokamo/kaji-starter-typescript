@@ -24,11 +24,10 @@ name: issue-start
 $ARGUMENTS = <issue_id>
 ```
 
-- `issue_id` (必須): Issue番号 (例: 247 / `local-pc1-3` / `gh:153`)
+- `issue_id` (必須): Issue番号 (例: 247 / `gh:153`)
 
 第 2 引数は **廃止** されています。ブランチ prefix は
-`./scripts/kaji issue context` が返す `branch_prefix`（frontmatter
-`branch_prefix` → `type:*` ラベル → `chore`
+`./scripts/kaji issue context` が返す `branch_prefix`（`type:*` ラベル → `chore`
 fallback の優先順）から自動決定します。
 
 ## 命名規則
@@ -47,8 +46,8 @@ fallback の優先順）から自動決定します。
 
 `$ARGUMENTS` から `issue_id` を取得してください。第 2 引数（旧
 `prefix`）が渡された場合は **ABORT**
-verdict を出して停止し、廃止アナウンスをユーザに返してください（label /
-frontmatter からの自動導出に一本化されているため）。
+verdict を出して停止し、廃止アナウンスをユーザに返してください（`type:*`
+ラベルからの自動導出に一本化されているため）。
 
 ### Step 1: context 正本の取得
 
@@ -84,13 +83,12 @@ cd "$WT" && make setup
 は worktree ごとに作成し、main や別 worktree への symlink を作らない。これにより baseline と
 `make check` が offline で実行可能になる。
 
-### Step 2.6: provider overlay (`.kaji/config.local.toml`) シンボリックリンク作成
+### Step 2.6: config overlay (`.kaji/config.local.toml`) シンボリックリンク作成
 
 `.kaji/config.local.toml` は gitignored のため `git worktree add`
 では worktree に転写されない。overlay 不在の worktree では `kaji` CLI が
-`.kaji/config.toml` の `provider.type=github` 既定値で動き、 `local-*` / `gl:N`
-形式 ID が拒否される（agent が worktree 配下で `./scripts/kaji issue comment`
-を叩けず、レビュー判定の Issue 記録が欠落する原因）。
+`.kaji/config.toml` だけで動き、main 側で上書きしたマシン固有設定（`[execution]`
+等）が worktree 配下の実行に反映されない。
 
 main の overlay が存在する場合のみ、worktree の `.kaji/`
 にシンボリックリンクで共有する:
@@ -102,8 +100,8 @@ fi
 ```
 
 `-f` で再作成を許容（既存 symlink を上書き）。`.gitignore`
-に登録済みのパスなので worktree 側 git status には現れない。`provider=github`
-運用では main にも overlay が無いため何も起きない（既存挙動と等価）。
+に登録済みのパスなので worktree 側 git
+status には現れない。main に overlay が無い場合は何も起きない。
 
 ### Step 3: Worktreeの確認
 
@@ -125,8 +123,7 @@ WT_BASENAME=$(basename "$WT")
 `./scripts/kaji issue prepend-note` は現在の Issue 本文を取得し、`> [!NOTE]`
 メタブロックと本文の間に **空行ちょうど 1 行** を保証して合成・更新する。blank
 line がエージェントではなく kaji 側の文字列リテラルに固定されるため、どのモデルでも blockquote と本文 heading が密着しない。`--commit`
-は local provider で `issue.md` を atomic
-commit する（github では silent に無視）。
+は github provider では silent に無視される（CLI 互換のため付与を維持）。
 
 ### Step 5: セットアップ完了報告
 
@@ -142,7 +139,7 @@ commit する（github では silent に無視）。
 | ディレクトリ | ../$(basename "$WT") |
 | 基点ブランチ | main |
 | dependency state | worktree-local setup 完了 |
-| provider overlay | シンボリックリンク作成済み / 不要（main に未配置） |
+| config overlay | シンボリックリンク作成済み / 不要（main に未配置） |
 | メタ情報 | Issue本文に追記済み |
 
 ### 次のステップ

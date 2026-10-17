@@ -1,6 +1,5 @@
 .env
 .kaji/config.local.toml
-.kaji/counters/
 .kaji/artifacts/
 .kaji-artifacts/
 .serena/
@@ -8,4 +7,5 @@
 coverage/
 dist/
 node_modules/
+tmp/
 tools/kaji/.venv/

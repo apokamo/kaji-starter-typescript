@@ -338,16 +338,14 @@ exit ${options?.runExitCode ?? 0}
   execFileSync("git", ["worktree", "add", mainWorktree, "main"], {
     cwd: worktree,
   });
-  mkdirSync(path.join(mainWorktree, ".kaji/issues/391/comments"), {
-    recursive: true,
-  });
+  mkdirSync(path.join(mainWorktree, "docs"), { recursive: true });
   writeFileSync(
-    path.join(mainWorktree, ".kaji/issues/391/comments/design.md"),
-    "status: PASS\n",
+    path.join(mainWorktree, "docs/main-update.md"),
+    "# Main update\n",
     "utf8",
   );
-  execFileSync("git", ["add", ".kaji/issues"], { cwd: mainWorktree });
-  execFileSync("git", ["commit", "-m", "chore(local): record design"], {
+  execFileSync("git", ["add", "docs/main-update.md"], { cwd: mainWorktree });
+  execFileSync("git", ["commit", "-m", "docs: advance main"], {
     cwd: mainWorktree,
   });
   execFileSync("git", ["worktree", "remove", mainWorktree], {
@@ -366,7 +364,7 @@ exit ${options?.runExitCode ?? 0}
       KAJI_ISSUE_ID: "391",
       KAJI_BRANCH_NAME: "feat/391",
       KAJI_DEFAULT_BRANCH: "main",
-      KAJI_PROVIDER_TYPE: "local",
+      KAJI_PROVIDER_TYPE: "github",
       KAJI_WORKTREE_DIR: worktree,
       KAJI_VERDICT_PATH: verdictPath,
     },

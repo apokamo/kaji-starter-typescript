@@ -1,4 +1,4 @@
-.PHONY: setup check lint format fmt typecheck test test-small test-medium test-large coverage build validate-workflows verify-docs verify-static dogfood-local
+.PHONY: setup check lint format fmt typecheck test test-small test-medium test-large coverage build validate-workflows verify-docs verify-static
 
 setup:
 	npm ci
@@ -50,6 +50,3 @@ verify-docs:
 
 verify-static: verify-docs
 	npm run verify:static
-
-dogfood-local:
-	./scripts/dogfood-local

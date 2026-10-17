@@ -28,21 +28,8 @@ test(
         .filter((line) => line.length > 0),
     );
 
-    expect(ignoredPaths.has(".kaji/counters/")).toBe(true);
+    expect(ignoredPaths.has("tmp/")).toBe(true);
     expect(ignoredPaths.has(".serena/")).toBe(true);
-  },
-);
-
-test(
-  "resolves dogfood issue state through the provider",
-  { tags: ["medium"] },
-  () => {
-    const dogfoodRunner = readFileSync("scripts/dogfood-local", "utf8");
-
-    expect(dogfoodRunner).toContain(
-      `./scripts/kaji issue view "$ISSUE_ID" --json state -q '.state'`,
-    );
-    expect(dogfoodRunner).not.toContain(`.kaji/issues/\${ISSUE_ID}.md`);
   },
 );
 

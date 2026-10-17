@@ -54,8 +54,8 @@ const workflowFiles = readdirSync(workflowRoot, { recursive: true })
   )
   .map((entry) => path.join(workflowRoot, entry))
   .sort();
-if (workflowFiles.length !== 5)
-  throw new Error(`Expected 5 custom workflows, got ${workflowFiles.length}`);
+if (workflowFiles.length !== 3)
+  throw new Error(`Expected 3 custom workflows, got ${workflowFiles.length}`);
 for (const filename of workflowFiles) {
   const source = readFileSync(filename, "utf8");
   const workflow = parse(source) as {

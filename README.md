@@ -20,11 +20,9 @@ npm run build
 npm start
 ```
 
-Use `./scripts/kaji` for every kaji command. GitHub development uses
-`.kaji/wf/custom/dev/dev.yaml`; local trials use
-`.kaji/wf/custom/local/dev-local.yaml` after `./scripts/kaji local init`. kaji
-deprecated the local provider in v0.21.0 and prints a warning to stderr when it
-is used; prefer the GitHub provider for new work.
+Use `./scripts/kaji` for every kaji command. Development uses
+`.kaji/wf/custom/dev/dev.yaml` with the GitHub provider, the only provider kaji
+supports since v0.23.0 removed the local provider.
 
 See the [documentation index](docs/README.md) and
 [Japanese README](README.ja.md). Report starter problems in the

@@ -33,8 +33,7 @@ $ARGUMENTS = <issue_id>
 
 `issue_ref`
 はハーネス経由では provider 別に整形されてプロンプトへ自動注入される。手動実行時は
-`issue_id` から導出する: GitHub 数値 ID なら `#<issue_id>`、`local-*`
-形式なら bare ID（`#` を付けない）。
+`issue_id` から `#<issue_id>` を導出する。
 
 ## 共通ルール
 

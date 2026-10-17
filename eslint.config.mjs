@@ -12,6 +12,7 @@ export default tseslint.config(
       "dist/**",
       "node_modules/**",
       "tests/fixtures/**",
+      "tmp/**",
       "tools/kaji/**",
     ],
   },

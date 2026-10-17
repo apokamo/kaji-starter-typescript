@@ -24,7 +24,7 @@ const environmentSchema = z.object({
   KAJI_ISSUE_ID: z.string().min(1),
   KAJI_BRANCH_NAME: z.string().min(1),
   KAJI_DEFAULT_BRANCH: z.string().min(1),
-  KAJI_PROVIDER_TYPE: z.enum(["github", "local"]),
+  KAJI_PROVIDER_TYPE: z.literal("github"),
   KAJI_WORKTREE_DIR: z.string().min(1),
   KAJI_VERDICT_PATH: z.string().min(1),
 });
