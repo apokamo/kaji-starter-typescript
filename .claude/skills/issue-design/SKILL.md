@@ -554,7 +554,7 @@ Issue: [issue_ref]
 > **CRITICAL**: 受入処理が 1 つの step
 > attempt の timeout 内に決定論的に収まらない設計を作らない。agent step の hard
 > deadline は延長されない（正本: kaji の
-> [workflow-authoring.md](https://github.com/apokamo/kaji/blob/v0.23.0/docs/dev/workflow-authoring.md)
+> [workflow-authoring.md](https://github.com/apokamo/kaji/blob/v0.23.1/docs/dev/workflow-authoring.md)
 > § timeout と attempt
 > deadline）。本小節は省略しない。対象がない場合も「該当なし」と根拠を記載する。
 

@@ -71,7 +71,7 @@ $ARGUMENTS = <issue_id>
 
 agent step の hard deadline は延長されず、到達時点で `verdict_path`
 が未保存なら harness が session を強制終了する（正本: kaji の
-[workflow-authoring.md](https://github.com/apokamo/kaji/blob/v0.23.0/docs/dev/workflow-authoring.md)
+[workflow-authoring.md](https://github.com/apokamo/kaji/blob/v0.23.1/docs/dev/workflow-authoring.md)
 § timeout と attempt
 deadline）。正常に前進していても期限切れで進捗が失われないよう、次の規則で残時間を管理する。
 

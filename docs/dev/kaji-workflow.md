@@ -19,8 +19,8 @@ approval-evidence check, and must re-run `make validate-workflows`.
 
 The custom workflows were derived from the managed Python starter at commit
 `dd80139b7dff3df190c0dabf8279fc6c59b881b4`. Release synchronization compares
-them with kaji `v0.23.0`, resolved as
-`a52bb3d4dd74d21bb6ebbc4d77d40c57da3b25e0`.
+them with kaji `v0.23.1`, resolved as
+`684ccd1ba5137d81b748b9cf29adb1c93e0ac386`.
 
 The intentional TypeScript differences are:
 
@@ -81,3 +81,14 @@ kaji v0.22.0 and v0.23.0 were synchronized together as one batch from the
 | Not applicable | `dev-small` completion-criteria guard (#444) and incident skills following `[incident] kind_label` (#457)                                                    | The starter ships neither `dev-small` nor incident skills.                                                                                                                                                                                                                                            |
 | Not applicable | Official workflow model assignments (#480), upstream custom workflows, series files, labels, CHANGELOG, design docs, and harness tests                       | Repository-specific to kaji; this starter owns its workflows and does not vendor upstream model policy.                                                                                                                                                                                               |
 | Not applicable | starter-sync maintainer skills and runbook                                                                                                                   | Maintainer-only; never copied into a starter.                                                                                                                                                                                                                                                         |
+
+## v0.23.1 synchronization record
+
+kaji v0.23.1 was synchronized from the `kaji-v0.23.0` snapshot together with one
+starter-only fix.
+
+| Classification | Change                                                                                                         | Starter decision                                                                                                                                                       |
+| -------------- | -------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ported         | The project-local kaji dependency                                                                              | Pin `tools/kaji` to `v0.23.1` and refresh its lockfile; the workflow-authoring links in `issue-design` / `issue-implement` follow the pin.                             |
+| Starter repair | CI could never run `make setup`: uv `0.9.27` has no managed download for the tool Python `3.13.13` (kaji #477) | Pin `astral-sh/setup-uv` to uv `0.13.1`; `verify-static` keeps the verified (uv, `tools/kaji/.python-version`) pair in one place and fails when only one side changes. |
+| Not applicable | Starter-sync skills and runbook gain starter-fix Issue discovery (#490), CHANGELOG, and harness tests          | Maintainer-only; never copied into a starter.                                                                                                                          |

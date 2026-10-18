@@ -68,6 +68,43 @@ export function verifyActionReferences(workflow: string): void {
   }
 }
 
+// uv 0.9.27 has no managed download for CPython 3.13.13; 0.13.1 does. Update
+// both values together after checking `uv python list <python> --all-versions`.
+export const VERIFIED_PYTHON_TOOLCHAIN = {
+  uv: "0.13.1",
+  python: "3.13.13",
+} as const;
+
+export function verifyPythonToolchain(
+  ciWorkflow: string,
+  pythonVersion: string,
+): void {
+  const workflow = parse(ciWorkflow) as {
+    jobs?: Record<
+      string,
+      { steps?: Array<{ uses?: string; with?: { version?: unknown } }> }
+    >;
+  };
+  const setupUvSteps = Object.values(workflow.jobs ?? {})
+    .flatMap((job) => job.steps ?? [])
+    .filter((step) => step.uses?.startsWith("astral-sh/setup-uv@") === true);
+  if (setupUvSteps.length === 0) {
+    throw new Error("CI contract missing: astral-sh/setup-uv");
+  }
+  for (const step of setupUvSteps) {
+    if (step.with?.version !== VERIFIED_PYTHON_TOOLCHAIN.uv) {
+      throw new Error(
+        `CI uv version must be ${VERIFIED_PYTHON_TOOLCHAIN.uv}, got ${String(step.with?.version)}`,
+      );
+    }
+  }
+  if (pythonVersion.trim() !== VERIFIED_PYTHON_TOOLCHAIN.python) {
+    throw new Error(
+      `tools/kaji/.python-version must be ${VERIFIED_PYTHON_TOOLCHAIN.python}, got ${pythonVersion.trim()}`,
+    );
+  }
+}
+
 export function verifyChecksum(actual: string, expected: string): void {
   if (!/^[0-9a-f]{64}$/.test(expected) || actual !== expected) {
     throw new Error(`Checksum mismatch: expected ${expected}, got ${actual}`);

@@ -4,6 +4,7 @@ import {
   verifyActionReferences,
   verifyChecksum,
   verifyPackagePolicy,
+  verifyPythonToolchain,
 } from "../scripts/verify-static.ts";
 import { resolveActionlintRelease } from "../scripts/setup-tools.ts";
 
@@ -119,6 +120,45 @@ test(
     });
     expect(() => resolveActionlintRelease("win32", "x64")).toThrow(
       /unsupported actionlint platform/i,
+    );
+  },
+);
+
+const ciWithUv = (version: string): string =>
+  [
+    "jobs:",
+    "  check:",
+    "    steps:",
+    "      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7",
+    "        with:",
+    `          version: "${version}"`,
+    "",
+  ].join("\n");
+
+test(
+  "accepts the verified uv and tool Python pair",
+  { tags: ["medium"] },
+  () => {
+    expect(() =>
+      verifyPythonToolchain(ciWithUv("0.13.1"), "3.13.13\n"),
+    ).not.toThrow();
+  },
+);
+
+test.each([
+  [ciWithUv("0.9.27"), "3.13.13\n", /uv version/i],
+  [ciWithUv("0.13.1"), "3.13.14\n", /python-version/i],
+  [
+    "jobs:\n  check:\n    steps:\n      - run: make check\n",
+    "3.13.13\n",
+    /setup-uv/i,
+  ],
+])(
+  "rejects a one-sided uv or tool Python update",
+  { tags: ["medium"] },
+  (workflow, pythonVersion, expected) => {
+    expect(() => verifyPythonToolchain(workflow, pythonVersion)).toThrow(
+      expected,
     );
   },
 );

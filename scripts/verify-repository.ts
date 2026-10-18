@@ -9,6 +9,7 @@ import {
   verifyAgentSkillSymlink,
   verifyConsumerText,
   verifyPackagePolicy,
+  verifyPythonToolchain,
   verifySkillMetadata,
   verifyTemplateIdentity,
 } from "./verify-static.ts";
@@ -72,6 +73,7 @@ for (const filename of workflowFiles) {
 }
 const ci = readFileSync(".github/workflows/ci.yml", "utf8");
 verifyActionReferences(ci);
+verifyPythonToolchain(ci, readFileSync("tools/kaji/.python-version", "utf8"));
 for (const required of [
   "permissions:",
   "contents: read",
